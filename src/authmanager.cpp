@@ -164,7 +164,8 @@ void AuthManager::validateToken()
 {
     QUrl url(m_serverUrl + "/api/auth/validateToken");
     QNetworkRequest request(url);
-    request.setRawHeader("X-Api-Key", m_accessToken.toUtf8());
+    request.setRawHeader("Authorization", QString("Bearer %1").arg(m_accessToken).toUtf8());
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     QNetworkReply *reply = m_networkManager->post(request, QByteArray());
     connect(reply, &QNetworkReply::finished, this, &AuthManager::onValidateTokenReplyFinished);
