@@ -44,6 +44,7 @@ QHash<int, QByteArray> TimelineModel::roleNames() const
 
 void TimelineModel::loadBuckets(const QJsonArray &bucketsJson)
 {
+   qInfo() << "TimelineModel: Loading" << bucketsJson.size() << "buckets";
    beginResetModel();
    m_buckets.clear();
    m_selectedIds.clear();
@@ -86,12 +87,14 @@ void TimelineModel::loadBuckets(const QJsonArray &bucketsJson)
    }
 
    endResetModel();
+   qInfo() << "TimelineModel: Loaded" << m_buckets.size() << "buckets, total assets:" << m_totalCount;
    emit bucketCountChanged();
    emit totalCountChanged();
 }
 
 void TimelineModel::loadBucketAssets(const QString &timeBucket, const QJsonObject &bucketData)
 {
+   qInfo() << "TimelineModel: Loading assets for bucket: " << timeBucket;
    int bucketIndex = findBucketByTimeBucket(timeBucket);
    if (bucketIndex < 0) {
        qWarning() << "TimelineModel: Bucket not found for timeBucket:" << timeBucket;
@@ -396,22 +399,6 @@ void TimelineModel::updateFavorites(const QStringList &assetIds, bool isFavorite
    }
    for (int bucketIdx : affectedBuckets) {
        emit dataChanged(index(bucketIdx), index(bucketIdx));
-   }
-}
-
-void TimelineModel::updateAssetMetadata(const QString &assetId, const QJsonObject &metadata)
-{
-   auto it = m_assetIndex.find(assetId);
-   if (it != m_assetIndex.end()) {
-       int bucketIdx = it.value().first;
-       int assetIdx = it.value().second;
-       if (bucketIdx < m_buckets.size() && assetIdx < m_buckets[bucketIdx].assets.size()) {
-           TimelineAsset &asset = m_buckets[bucketIdx].assets[assetIdx];
-
-           if (metadata.contains(QStringLiteral("isFavorite"))) {
-               asset.isFavorite = metadata[QStringLiteral("isFavorite")].toBool();
-           }
-       }
    }
 }
 

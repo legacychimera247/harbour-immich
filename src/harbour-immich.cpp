@@ -24,17 +24,17 @@ int main(int argc, char *argv[])
    app->setOrganizationName("mezmerize");
    app->setApplicationName("harbour-immich");
 
+   QQuickView *view = SailfishApp::createView();
+
+   SettingsManager *settingsManager = new SettingsManager(app);
+
    // Translator
-   const auto translator = new QTranslator(app);
+   QTranslator *translator = new QTranslator(app);
    const QString translationsDir = SailfishApp::pathTo("translations").toLocalFile();
    if (!translator->load(QLocale::system(), "harbour-immich", "-", translationsDir)) {
        translator->load("harbour-immich-en", translationsDir);
    }
    app->installTranslator(translator);
-
-   QQuickView *view = SailfishApp::createView();
-
-   SettingsManager *settingsManager = new SettingsManager(app);
    SecureStorage *secureStorage = new SecureStorage(app);
 
    secureStorage->initialize();

@@ -635,10 +635,10 @@ Page {
      onDownload: {
          var selectedIds = timelineModel.getSelectedAssetIds()
          for (var i = 0; i < selectedIds.length; i++) {
-             immichApi.downloadAsset(selectedIds[i], "asset_" + selectedIds[i])
+             immichApi.downloadAsset(selectedIds[i])
          }
          timelineModel.clearSelection()
-         errorNotification.show(selectedIds.length === 1
+         notification.show(selectedIds.length === 1
             //% "Downloading asset..."
             ? qsTrId("timelinePage.downloadingAsset")
             //% "Downloading %1 assets..."
@@ -1007,10 +1007,10 @@ Page {
      }
      onErrorOccurred: {
          timelineModel.setLoading(false)
-         errorNotification.show(error)
+         notification.showError(error)
      }
      onAssetsDeleted: {
-         errorNotification.show(assetIds.length === 1
+         notification.show(assetIds.length === 1
             //% "Deleted asset"
             ? qsTrId("timelinePage.deletedAsset")
             //% "Deleted %1 assets"
@@ -1018,17 +1018,17 @@ Page {
      }
      onAssetDownloaded: {
          //% "Downloaded to: %1"
-         errorNotification.show(qsTrId("timelinePage.downloaded").arg(filePath))
+         notification.show(qsTrId("timelinePage.downloaded").arg(filePath))
      }
      onAssetsAddedToAlbum: {
          timelineModel.clearSelection()
          page.pendingAlbumAssetIds = []
          //% "Added asset(s) to album"
-         errorNotification.show(qsTrId("timelinePage.addedToAlbum"))
+         notification.show(qsTrId("timelinePage.addedToAlbum"))
      }
      onFavoritesToggled: {
          timelineModel.clearSelection()
-         errorNotification.show(isFavorite ? (assetIds.length === 1
+         notification.show(isFavorite ? (assetIds.length === 1
               //% "Added asset to favorites"
               ? qsTrId("timelinePage.addedAssetToFavorites")
               //% "Added %1 assets to favorites"
@@ -1044,50 +1044,19 @@ Page {
              immichApi.addAssetsToAlbum(albumId, page.pendingAlbumAssetIds)
          }
          //% "Created album: %1"
-         errorNotification.show(qsTrId("timelinePage.createdAlbum").arg(albumName))
+         notification.show(qsTrId("timelinePage.createdAlbum").arg(albumName))
          // Refresh albums list
          immichApi.fetchAlbums()
      }
+     onUploadAllComplete: {
+         if (successCount > 0) {
+             page.refresh()
+         }
+     }
  }
 
- Rectangle {
-     id: errorNotification
+ NotificationBanner {
+     id: notification
      anchors.bottom: parent.bottom
-     anchors.left: parent.left
-     anchors.right: parent.right
-     height: errorLabel.height + Theme.paddingLarge * 2
-     color: Theme.rgba(Theme.errorColor, 0.9)
-     visible: opacity > 0
-     opacity: 0
-
-     Behavior on opacity {
-         NumberAnimation { duration: 300 }
-     }
-
-     Label {
-         id: errorLabel
-         anchors.centerIn: parent
-         width: parent.width - Theme.paddingLarge * 2
-         wrapMode: Text.WordWrap
-         horizontalAlignment: Text.AlignHCenter
-         color: Theme.primaryColor
-     }
-
-     function show(message) {
-         errorLabel.text = message
-         opacity = 1
-         hideTimer.restart()
-     }
-
-     Timer {
-         id: hideTimer
-         interval: 5000
-         onTriggered: errorNotification.opacity = 0
-     }
-
-     MouseArea {
-         anchors.fill: parent
-         onClicked: errorNotification.opacity = 0
-     }
  }
 }

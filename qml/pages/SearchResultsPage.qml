@@ -234,7 +234,7 @@ Page {
        onClearSelection: page.clearSelection()
        onDownload: {
            for (var i = 0; i < page.selectedAssets.length; i++) {
-               immichApi.downloadAsset(page.selectedAssets[i], page.selectedAssets[i] + ".jpg")
+               immichApi.downloadAsset(page.selectedAssets[i])
            }
            page.clearSelection()
            notification.show(page.selectedAssets.length === 1
@@ -255,46 +255,9 @@ Page {
        forceHidden: selectionActionBar.menuOpen
    }
 
-   // Notification banner
-   Rectangle {
+   NotificationBanner {
        id: notification
        anchors.bottom: page.selectionMode ? selectionActionBar.top : parent.bottom
-       anchors.left: parent.left
-       anchors.right: parent.right
-       height: opacity > 0 ? notificationLabel.height + Theme.paddingLarge * 2 : 0
-       color: Theme.rgba(Theme.highlightBackgroundColor, 0.9)
-       visible: opacity > 0
-       opacity: 0
-
-       Behavior on opacity {
-           NumberAnimation { duration: 300 }
-       }
-
-       Label {
-           id: notificationLabel
-           anchors.centerIn: parent
-           width: parent.width - Theme.paddingLarge * 2
-           wrapMode: Text.WordWrap
-           horizontalAlignment: Text.AlignHCenter
-           color: Theme.primaryColor
-       }
-
-       function show(message) {
-           notificationLabel.text = message
-           opacity = 1
-           notificationHideTimer.restart()
-       }
-
-       Timer {
-           id: notificationHideTimer
-           interval: 3000
-           onTriggered: notification.opacity = 0
-       }
-
-       MouseArea {
-           anchors.fill: parent
-           onClicked: notification.opacity = 0
-       }
    }
 
    Component.onCompleted: {

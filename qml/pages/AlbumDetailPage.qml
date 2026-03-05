@@ -115,7 +115,7 @@ Page {
           var earliest = sorted[0].dateObj
           var latest = sorted[sorted.length - 1].dateObj
           var fmt = function(d) { return Qt.formatDate(d, "dd.MM.yyyy") }
-          dateRange = fmt(earliest) + " — " + fmt(latest)
+          dateRange = earliest === latest ? fmt(earliest) : fmt(earliest) + " — " + fmt(latest)
       } else {
           dateRange = ""
       }
@@ -184,18 +184,6 @@ Page {
               onClicked: {
                   page.loading = true
                   immichApi.fetchAlbumDetails(albumId)
-              }
-          }
-
-          MenuItem {
-              //% "Edit album"
-              text: qsTrId("albumDetailPage.editAlbum")
-              onClicked: {
-                  pageStack.push(Qt.resolvedUrl("EditAlbumDialog.qml"), {
-                      albumId: albumId,
-                      albumName: albumName,
-                      albumDescription: albumDescription
-                  })
               }
           }
 
@@ -621,11 +609,29 @@ Page {
       }
 
       onFavoritesToggled: {
+          // Update local asset data
+          var updated = allAssets
+          for (var i = 0; i < updated.length; i++) {
+              if (assetIds.indexOf(updated[i].id) > -1) {
+                  updated[i].isFavorite = isFavorite
+              }
+          }
+          allAssets = updated
+          page.clearSelection()
           notification.show(isFavorite
                //% "Added to favorites"
                ? qsTrId("albumDetailPage.addedToFavorites")
                //% "Removed from favorites"
                : qsTrId("albumDetailPage.removedFromFavorites"))
+      }
+
+      onAssetsDeleted: {
+          immichApi.fetchAlbumDetails(albumId)
+          notification.show(assetIds.length === 1
+               //% "Deleted asset"
+               ? qsTrId("albumDetailPage.deletedAsset")
+               //% "Deleted %1 assets"
+               : qsTrId("albumDetailPage.deletedAssets").arg(assetIds.length))
       }
   }
 
@@ -655,7 +661,7 @@ Page {
       onClearSelection: page.clearSelection()
       onDownload: {
           for (var i = 0; i < page.selectedAssets.length; i++) {
-              immichApi.downloadAsset(page.selectedAssets[i], page.selectedAssets[i] + ".jpg")
+              immichApi.downloadAsset(page.selectedAssets[i])
           }
           page.clearSelection()
           notification.show(page.selectedAssets.length === 1
@@ -676,45 +682,8 @@ Page {
       forceHidden: selectionActionBar.menuOpen
   }
 
-  // Notification banner
-  Rectangle {
+  NotificationBanner {
       id: notification
       anchors.bottom: page.selectionMode ? selectionActionBar.top : parent.bottom
-      anchors.left: parent.left
-      anchors.right: parent.right
-      height: opacity > 0 ? notificationLabel.height + Theme.paddingLarge * 2 : 0
-      color: Theme.rgba(Theme.highlightBackgroundColor, 0.9)
-      visible: opacity > 0
-      opacity: 0
-
-      Behavior on opacity {
-          NumberAnimation { duration: 300 }
-      }
-
-      Label {
-          id: notificationLabel
-          anchors.centerIn: parent
-          width: parent.width - Theme.paddingLarge * 2
-          wrapMode: Text.WordWrap
-          horizontalAlignment: Text.AlignHCenter
-          color: Theme.primaryColor
-      }
-
-      function show(message) {
-          notificationLabel.text = message
-          opacity = 1
-          notificationHideTimer.restart()
-      }
-
-      Timer {
-          id: notificationHideTimer
-          interval: 3000
-          onTriggered: notification.opacity = 0
-      }
-
-      MouseArea {
-          anchors.fill: parent
-          onClicked: notification.opacity = 0
-      }
   }
 }

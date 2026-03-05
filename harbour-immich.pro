@@ -31,6 +31,7 @@ DISTFILES += qml/harbour-immich.qml \
     qml/components/AssetGridItem.qml \
     qml/components/FilterablePickerDialog.qml \
     qml/components/MemoriesBar.qml \
+    qml/components/NotificationBanner.qml \
     qml/components/PeoplePickerDialog.qml \
     qml/components/QRCode.qml \
     qml/components/ScrollToTopButton.qml \
@@ -41,7 +42,7 @@ DISTFILES += qml/harbour-immich.qml \
     qml/pages/AssetDetailPage.qml \
     qml/pages/AssetInfoPage.qml \
     qml/pages/EditAlbumDialog.qml \
-    qml/pages/EditAssetDescriptionDialog.qml \
+    qml/pages/EditAssetDialog.qml \
     qml/pages/MemoryDetailPage.qml \
     qml/pages/OAuthPage.qml \
     qml/pages/SearchResultsPage.qml \
@@ -54,6 +55,7 @@ DISTFILES += qml/harbour-immich.qml \
     qml/pages/SharePage.qml \
     qml/pages/ShareResultPage.qml \
     qml/pages/TimelinePage.qml \
+    qml/pages/UserPickerPage.qml \
     qml/pages/VideoPlayerPage.qml \
     rpm/harbour-immich.changes.in \
     rpm/harbour-immich.changes.run.in \

@@ -142,11 +142,12 @@ BackgroundItem {
         visible: isSelected
     }
 
-    Image {
-        anchors.centerIn: parent
-        source: "image://theme/icon-m-acknowledge"
-        visible: isSelected
-        width: Theme.iconSizeMedium
-        height: Theme.iconSizeMedium
+    Connections {
+        target: immichApi
+        onFavoritesToggled: {
+            if (assetIds.indexOf(item.assetId) > -1) {
+                item.isFavorite = isFavorite
+            }
+        }
     }
 }

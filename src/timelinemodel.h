@@ -74,7 +74,6 @@ public:
 
    // Asset updates
    Q_INVOKABLE void updateFavorites(const QStringList &assetIds, bool isFavorite);
-   Q_INVOKABLE void updateAssetMetadata(const QString &assetId, const QJsonObject &metadata);
    Q_INVOKABLE void removeAssets(const QStringList &assetIds);
    Q_INVOKABLE void scrollToAsset(const QString &assetId, const QString &dateString);
 

@@ -1,5 +1,6 @@
 import QtQuick 2.0
 import Sailfish.Silica 1.0
+import "../components"
 
 Page {
     id: page
@@ -69,6 +70,16 @@ Page {
             }
 
             MenuItem {
+                //% "Download"
+                text: qsTrId("assetDetailPage.download")
+                onClicked: {
+                    immichApi.downloadAsset(assetId)
+                    //% "Downloading..."
+                    notification.show(qsTrId("assetDetailPage.downloading"))
+                }
+            }
+
+            MenuItem {
                 text: isFavorite
                       //% "Remove from favorites"
                       ? qsTrId("assetDetailPage.removeFromFavorites")
@@ -76,7 +87,6 @@ Page {
                       : qsTrId("assetDetailPage.addToFavorites")
                 onClicked: {
                     immichApi.toggleFavorite([assetId], !isFavorite)
-                    isFavorite = !isFavorite
                 }
             }
         }
@@ -277,5 +287,21 @@ Page {
         onAssetInfoReceived: {
             assetInfo = info
         }
+        onFavoritesToggled: {
+            if (assetIds.indexOf(assetId) > -1) {
+                page.isFavorite = isFavorite
+            }
+        }
+        onAssetDownloaded: {
+            if (assetId === page.assetId) {
+                //% "Downloaded: %1"
+                notification.show(qsTrId("assetDetailPage.downloaded").arg(filePath))
+            }
+        }
+    }
+
+    NotificationBanner {
+        id: notification
+        anchors.bottom: parent.bottom
     }
 }

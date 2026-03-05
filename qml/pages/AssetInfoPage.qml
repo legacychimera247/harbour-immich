@@ -14,13 +14,19 @@ Page {
 
         PullDownMenu {
             MenuItem {
-                //% "Edit Description"
-                text: qsTrId("assetInfoPage.editDescription")
+                //% "Edit Asset"
+                text: qsTrId("assetInfoPage.editAsset")
                 onClicked: {
                     var currentDesc = assetInfo && assetInfo.exifInfo && assetInfo.exifInfo.description ? assetInfo.exifInfo.description : ""
-                    pageStack.push(Qt.resolvedUrl("EditAssetDescriptionDialog.qml"), {
+                    var hasLoc = assetInfo && assetInfo.exifInfo && assetInfo.exifInfo.latitude ? true : false
+                    var lat = hasLoc ? assetInfo.exifInfo.latitude : 0
+                    var lng = hasLoc ? assetInfo.exifInfo.longitude : 0
+                    pageStack.push(Qt.resolvedUrl("EditAssetDialog.qml"), {
                         assetId: page.assetId,
-                        description: currentDesc
+                        description: currentDesc,
+                        latitude: lat,
+                        longitude: lng,
+                        hasLocation: hasLoc
                     })
                 }
             }
@@ -249,12 +255,15 @@ Page {
 
     Connections {
         target: immichApi
-        onAssetDescriptionUpdated: {
+        onAssetUpdated: {
             if (assetId === page.assetId && page.assetInfo) {
-                // Update local assetInfo with new description
                 var info = page.assetInfo
                 if (!info.exifInfo) info.exifInfo = {}
                 info.exifInfo.description = description
+                if (latitude !== 0 || longitude !== 0) {
+                    info.exifInfo.latitude = latitude
+                    info.exifInfo.longitude = longitude
+                }
                 page.assetInfo = null
                 page.assetInfo = info
             }

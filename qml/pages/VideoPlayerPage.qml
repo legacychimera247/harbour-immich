@@ -1,6 +1,7 @@
 import QtQuick 2.0
 import Sailfish.Silica 1.0
 import QtMultimedia 5.6
+import "../components"
 
 Page {
    id: page
@@ -42,6 +43,27 @@ Page {
            }
 
            MenuItem {
+               //% "Share"
+               text: qsTrId("videoPlayerPage.share")
+               onClicked: {
+                   pageStack.push(Qt.resolvedUrl("SharePage.qml"), {
+                       shareType: "INDIVIDUAL",
+                       assetIds: [videoId]
+                   })
+               }
+           }
+
+           MenuItem {
+               //% "Download"
+               text: qsTrId("videoPlayerPage.download")
+               onClicked: {
+                   immichApi.downloadAsset(videoId)
+                   //% "Downloading..."
+                   notification.show(qsTrId("videoPlayerPage.downloading"))
+               }
+           }
+
+           MenuItem {
                text: isFavorite
                      //% "Remove from favorites"
                      ? qsTrId("videoPlayerPage.removeFromFavorites")
@@ -49,7 +71,6 @@ Page {
                      : qsTrId("videoPlayerPage.addToFavorites")
                onClicked: {
                    immichApi.toggleFavorite([videoId], !isFavorite)
-                   isFavorite = !isFavorite
                }
            }
        }
@@ -236,11 +257,28 @@ Page {
                page.assetInfo = info
            }
        }
+       onFavoritesToggled: {
+           if (assetIds.indexOf(videoId) > -1) {
+               page.isFavorite = isFavorite
+           }
+       }
+       onAssetDownloaded: {
+           if (assetId === page.videoId) {
+               //% "Downloaded: %1"
+               notification.show(qsTrId("videoPlayerPage.downloaded").arg(filePath))
+           }
+       }
    }
 
    Component.onCompleted: {
        immichApi.getAssetInfo(videoId)
        videoPlayer.play()
        controlsHideTimer.start()
+   }
+
+   NotificationBanner {
+       id: notification
+       anchors.bottom: parent.bottom
+       z: 10
    }
 }

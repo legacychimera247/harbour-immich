@@ -1,4 +1,5 @@
 #include "authmanager.h"
+#include <QDebug>
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
@@ -62,20 +63,21 @@ void AuthManager::setEmail(const QString &email)
 
 void AuthManager::checkStoredCredentials()
 {
+    qInfo() << "AuthManager: Checking stored credentials";
     m_serverUrl = m_storage->loadServerUrl();
     m_email = m_storage->loadEmail();
     m_accessToken = m_storage->loadAccessToken();
 
     if (!m_serverUrl.isEmpty() && !m_accessToken.isEmpty()) {
-        // We have access token - validate it
+        qInfo() << "AuthManager: Found access token, validating";
         validateToken();
     } else {
         QString storedPassword = m_storage->loadPassword();
         if (!m_serverUrl.isEmpty() && !m_email.isEmpty() && !storedPassword.isEmpty()) {
-            // No access token but credentials are stored
+            qInfo() << "AuthManager: No token, logging in with stored credentials";
             login(m_email, storedPassword);
         } else {
-            // No credentials
+            qInfo() << "AuthManager: No stored credentials found";
             emit loginFailed(QString());
         }
     }
@@ -93,7 +95,7 @@ void AuthManager::reloginWithStoredCredentials()
 
 void AuthManager::login(const QString &email, const QString &password)
 {
-    // Store email and password for later use
+    qInfo() << "AuthManager: Logging as" << email;
     setEmail(email);
     m_storage->savePassword(password);
 
@@ -126,6 +128,7 @@ void AuthManager::onLoginReplyFinished()
 
         m_storage->saveAccessToken(m_accessToken);
 
+        qInfo() << "AuthManager: Login succeeded";
         setAuthenticated(true);
         emit loginSucceeded();
     } else {
@@ -140,6 +143,7 @@ void AuthManager::onLoginReplyFinished()
             }
         }
         
+        qInfo() << "AuthManager: Login failed:" << errorString;
         emit loginFailed(errorString);
     }
 
@@ -148,6 +152,7 @@ void AuthManager::onLoginReplyFinished()
 
 void AuthManager::logout()
 {
+    qInfo() << "AuthManager: Logging out";
     m_accessToken.clear();
     m_email.clear();
     m_storage->clearAll();
@@ -182,15 +187,15 @@ void AuthManager::onValidateTokenReplyFinished()
         QJsonObject obj = doc.object();
 
         if (obj["authStatus"].toBool()) {
-            // Token is valid
+            qInfo() << "AuthManager: Token validated successfully";
             setAuthenticated(true);
             emit loginSucceeded();
         } else {
-            // Token invalid - use stored credentials
+            qInfo() << "AuthManager: Token invalid, re-logging in";
             reloginWithStoredCredentials();
         }
     } else {
-        // Validation failed - use stored credentials
+        qInfo() << "AuthManager: Token validation failed, re-logging in";
         reloginWithStoredCredentials();
     }
 

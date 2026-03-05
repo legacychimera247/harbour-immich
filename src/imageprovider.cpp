@@ -46,6 +46,7 @@ void ImmichImageResponse::startRequest()
    QNetworkRequest request(m_url);
    request.setRawHeader("Authorization", QString("Bearer %1").arg(m_authToken).toUtf8());
    request.setAttribute(QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::PreferCache);
+   request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
 
    m_reply = m_networkManager->get(request);
    connect(m_reply, &QNetworkReply::finished, this, &ImmichImageResponse::onFinished);
@@ -185,5 +186,6 @@ QQuickImageResponse *ImmichImageProvider::requestImageResponse(const QString &id
        return nullptr;
    }
 
+   qDebug() << "ImageProvider: Requesting" << type << "for" << assetId;
    return new ImmichImageResponse(url, m_authManager->getAccessToken(), requestedSize);
 }

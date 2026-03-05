@@ -47,4 +47,14 @@ ApplicationWindow
             pageStack.push(Qt.resolvedUrl("pages/ServerPage.qml"))
         }
     }
+
+    Connections {
+        target: immichApi
+        onAssetsDeleted: {
+            timelineModel.removeAssets(assetIds)
+        }
+        onFavoritesToggled: {
+            timelineModel.updateFavorites(assetIds, isFavorite)
+        }
+    }
 }

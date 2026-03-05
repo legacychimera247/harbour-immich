@@ -42,6 +42,7 @@ QNetworkRequest ImmichApi::createAuthenticatedRequest(const QUrl &url) const
 
 void ImmichApi::fetchAlbums(const QString &shared)
 {
+   qInfo() << "ImmichApi: Fetching albums, shared:" << shared;
    QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/albums"));
    if (!shared.isEmpty()) {
        QUrlQuery query;
@@ -52,12 +53,14 @@ void ImmichApi::fetchAlbums(const QString &shared)
    QNetworkReply *reply = m_networkManager->get(request);
    connectReply(reply, [this](const QByteArray &response) {
        QJsonDocument doc = QJsonDocument::fromJson(response);
+       qInfo() << "ImmichApi: Albums received, count:" << doc.array().size();
        emit albumsReceived(doc.array());
    });
 }
 
 void ImmichApi::fetchAlbumDetails(const QString &albumId)
 {
+   qInfo() << "ImmichApi: Fetching album details for:" << albumId;
    QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/albums/") + albumId);
    QNetworkRequest request = createAuthenticatedRequest(url);
    QNetworkReply *reply = m_networkManager->get(request);
@@ -297,6 +300,7 @@ void ImmichApi::onFavoriteReplyFinished()
 
 void ImmichApi::getAssetInfo(const QString &assetId)
 {
+   qInfo() << "ImmichApi: Getting asset info for:" << assetId;
    QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/assets/") + assetId);
    QNetworkRequest request = createAuthenticatedRequest(url);
    QNetworkReply *reply = m_networkManager->get(request);
@@ -306,20 +310,27 @@ void ImmichApi::getAssetInfo(const QString &assetId)
    });
 }
 
-void ImmichApi::updateAssetDescription(const QString &assetId, const QString &description)
+void ImmichApi::updateAsset(const QString &assetId, const QString &description, double latitude, double longitude, bool updateLocation)
 {
+    qInfo() << "ImmichApi: Updating asset:" << assetId;
     QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/assets/") + assetId);
     QNetworkRequest request = createAuthenticatedRequest(url);
 
     QJsonObject json;
     json["description"] = description;
+    if (updateLocation) {
+        json["latitude"] = latitude;
+        json["longitude"] = longitude;
+    }
 
     QJsonDocument doc(json);
     QNetworkReply *reply = m_networkManager->put(request, doc.toJson());
     QString savedId = assetId;
     QString savedDesc = description;
-    connectReply(reply, [this, savedId, savedDesc](const QByteArray &) {
-        emit assetDescriptionUpdated(savedId, savedDesc);
+    double savedLat = latitude;
+    double savedLng = longitude;
+    connectReply(reply, [this, savedId, savedDesc, savedLat, savedLng](const QByteArray &) {
+        emit assetUpdated(savedId, savedDesc, savedLat, savedLng);
     });
 }
 
@@ -485,7 +496,6 @@ void ImmichApi::deleteAssets(const QStringList &assetIds)
    QUrl url(m_authManager->serverUrl() + "/api/assets");
    QNetworkRequest request = createAuthenticatedRequest(url);
 
-
    QJsonObject json;
    QJsonArray idsArray;
    for (const QString &id : assetIds) {
@@ -498,7 +508,6 @@ void ImmichApi::deleteAssets(const QStringList &assetIds)
    QBuffer *buffer = new QBuffer();
    buffer->setData(data);
    buffer->open(QIODevice::ReadOnly);
-
 
    QNetworkReply *reply = m_networkManager->sendCustomRequest(request, "DELETE", buffer);
    buffer->setParent(reply);
@@ -521,42 +530,81 @@ void ImmichApi::onDeleteReplyFinished()
    reply->deleteLater();
 }
 
-void ImmichApi::downloadAsset(const QString &assetId, const QString &fileName)
+void ImmichApi::downloadAsset(const QString &assetId)
+{
+   qInfo() << "ImmichApi: Downloading asset:" << assetId;
+
+   // First fetch asset info to get the original filename
+   QUrl infoUrl(m_authManager->serverUrl() + QStringLiteral("/api/assets/") + assetId);
+   QNetworkRequest infoRequest = createAuthenticatedRequest(infoUrl);
+   QNetworkReply *infoReply = m_networkManager->get(infoRequest);
+
+   connectReply(infoReply, [this, assetId](const QByteArray &response) {
+       QJsonDocument doc = QJsonDocument::fromJson(response);
+       QString originalName = doc.object()["originalFileName"].toString();
+       if (originalName.isEmpty()) {
+           originalName = assetId;
+       }
+       startAssetDownload(assetId, originalName);
+   });
+}
+
+void ImmichApi::startAssetDownload(const QString &assetId, const QString &fileName)
 {
    QUrl url(m_authManager->serverUrl() + "/api/assets/" + assetId + "/original");
    QNetworkRequest request = createAuthenticatedRequest(url);
+   request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+
+   QString downloadPath = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
+   QString tempPath = downloadPath + "/.download_" + assetId;
+
+   QFile *file = new QFile(tempPath);
+   if (!file->open(QIODevice::WriteOnly)) {
+      emit errorOccurred("Failed to create file: " + tempPath);
+      delete file;
+      return;
+   }
 
    QNetworkReply *reply = m_networkManager->get(request);
    reply->setProperty("assetId", assetId);
-   reply->setProperty("fileName", fileName);
-   connect(reply, &QNetworkReply::finished, this, &ImmichApi::onDownloadReplyFinished);
-}
 
-void ImmichApi::onDownloadReplyFinished()
-{
-   QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
-   if (!reply) return;
+   // Stream data to disk as it arrives instead of buffering in RAM
+   connect(reply, &QNetworkReply::readyRead, this, [reply, file]() {
+      file->write(reply->readAll());
+   });
 
-   if (reply->error() == QNetworkReply::NoError) {
-       QString assetId = reply->property("assetId").toString();
-       QString fileName = reply->property("fileName").toString();
+   connect(reply, &QNetworkReply::finished, this, [this, reply, file, tempPath, downloadPath, fileName]() {
+      QString assetId = reply->property("assetId").toString();
 
-       QString downloadPath = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
-       QString filePath = downloadPath + "/" + fileName;
+      if (reply->error() == QNetworkReply::NoError) {
+          file->write(reply->readAll());
+          file->close();
 
-       QFile file(filePath);
-       if (file.open(QIODevice::WriteOnly)) {
-           file.write(reply->readAll());
-           file.close();
-           emit assetDownloaded(assetId, filePath);
-       } else {
-           emit errorOccurred("Failed to save file: " + filePath);
-       }
-   } else {
-       handleNetworkError(reply);
-   }
+          QString finalPath = downloadPath + "/" + fileName;
+          // Avoid overwriting existing files
+          if (QFile::exists(finalPath)) {
+              QFileInfo fi(fileName);
+              QString base = fi.completeBaseName();
+              QString ext = fi.suffix();
+              int counter = 1;
+              do {
+                  finalPath = downloadPath + "/" + base + "_" + QString::number(counter) + (ext.isEmpty() ? "" : "." + ext);
+                  counter++;
+              } while (QFile::exists(finalPath));
+          }
 
-   reply->deleteLater();
+          QFile::rename(tempPath, finalPath);
+          delete file;
+          qInfo() << "ImmichApi: Download complete:" << finalPath;
+          emit assetDownloaded(assetId, finalPath);
+      } else {
+          file->close();
+          file->remove();
+          delete file;
+          handleNetworkError(reply);
+      }
+      reply->deleteLater();
+   });
 }
 
 void ImmichApi::addAssetsToAlbum(const QString &albumId, const QStringList &assetIds)
@@ -611,8 +659,47 @@ void ImmichApi::onSharedLinkReplyFinished()
    reply->deleteLater();
 }
 
+void ImmichApi::fetchUsers()
+{
+    qInfo() << "ImmichApi: Fetching users";
+    QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/users"));
+    QNetworkRequest request = createAuthenticatedRequest(url);
+    QNetworkReply *reply = m_networkManager->get(request);
+    connectReply(reply, [this](const QByteArray &response) {
+       QJsonDocument doc = QJsonDocument::fromJson(response);
+       QJsonArray users = doc.isArray() ? doc.array() : QJsonArray();
+       qInfo() << "ImmichApi: Users received, count:" << users.size();
+       emit usersReceived(users);
+    });
+}
+
+void ImmichApi::addUsersToAlbum(const QString &albumId, const QStringList &userIds)
+{
+    qInfo() << "ImmichApi: Adding" << userIds.size() << "users to album:" << albumId;
+    QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/albums") + albumId + QStringLiteral("/users"));
+    QNetworkRequest request = createAuthenticatedRequest(url);
+
+    QJsonArray albumUsers;
+    for (const QString &userId : userIds) {
+        QJsonObject userObj;
+        userObj["userId"] = userId;
+        userObj["role"] = QStringLiteral("editor");
+        albumUsers.append(userObj);
+    }
+    QJsonObject json;
+    json["albumUsers"] = albumUsers;
+
+    QJsonDocument doc(json);
+    QNetworkReply *reply = m_networkManager->put(request, doc.toJson());
+    QString savedAlbumId = albumId;
+    connectReply(reply, [this, savedAlbumId](const QByteArray &) {
+        emit usersAddedToAlbum(savedAlbumId);
+    });
+}
+
 void ImmichApi::fetchMemories()
 {
+    qInfo() << "ImmichApi: Fetching memories";
     QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/memories"));
     QUrlQuery query;
     query.addQueryItem(QStringLiteral("for"), QDateTime::currentDateTime().toString(Qt::ISODate));
@@ -621,28 +708,33 @@ void ImmichApi::fetchMemories()
     QNetworkReply *reply = m_networkManager->get(request);
     connectReply(reply, [this](const QByteArray &response) {
        QJsonDocument doc = QJsonDocument::fromJson(response);
+       qInfo() << "ImmichApi: Memories received, count:" << doc.array().size();
        emit memoriesReceived(doc.array());
     });
 }
 
 void ImmichApi::fetchServerStatistics()
 {
+    qInfo() << "ImmichApi: Fetching server statistics";
     QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/server/statistics"));
     QNetworkRequest request = createAuthenticatedRequest(url);
     QNetworkReply *reply = m_networkManager->get(request);
     connectReply(reply, [this](const QByteArray &response) {
        QJsonDocument doc = QJsonDocument::fromJson(response);
+       qInfo() << "ImmichApi: Server statistics received";
        emit serverStatisticsReceived(doc.object());
     });
 }
 
 void ImmichApi::fetchServerAbout()
 {
+    qInfo() << "ImmichApi: Fetching server about";
     QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/server/about"));
     QNetworkRequest request = createAuthenticatedRequest(url);
     QNetworkReply *reply = m_networkManager->get(request);
     connectReply(reply, [this](const QByteArray &response) {
        QJsonDocument doc = QJsonDocument::fromJson(response);
+       qInfo() << "ImmichApi: Server about received";
        emit serverAboutReceived(doc.object());
     });
 }
@@ -696,6 +788,7 @@ void ImmichApi::updateAlbum(const QString &albumId, const QString &albumName, co
 
 void ImmichApi::fetchTimelineBuckets(bool isFavorite, const QString &order)
 {
+    qInfo() << "ImmichApi: Fetching timeline buckets, favorite" << isFavorite << "order:" << order;
     QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/timeline/buckets"));
     QUrlQuery query;
     query.addQueryItem(QStringLiteral("visibility"), QStringLiteral("timeline"));
@@ -712,12 +805,14 @@ void ImmichApi::fetchTimelineBuckets(bool isFavorite, const QString &order)
     QNetworkReply *reply = m_networkManager->get(request);
     connectReply(reply, [this](const QByteArray &response) {
        QJsonDocument doc = QJsonDocument::fromJson(response);
+       qInfo() << "ImmichApi: Timeline buckets received, count:" << doc.array().size();
        emit timelineBucketsReceived(doc.array());
     });
 }
 
 void ImmichApi::fetchTimelineBucket(const QString &timeBucket, bool isFavorite)
 {
+    qInfo() << "ImmichApi: Fetching bucket:" << timeBucket << "favorite:" << isFavorite;
     QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/timeline/bucket"));
     QUrlQuery query;
     query.addQueryItem(QStringLiteral("timeBucket"), timeBucket);

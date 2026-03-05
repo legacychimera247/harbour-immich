@@ -6,8 +6,14 @@ Page {
 
    property var serverStats: null
    property var serverAbout: null
+   property bool statsLoading: false
+   property bool aboutLoading: false
+   property bool statsFailed: false
+   property bool aboutFailed: false
 
    Component.onCompleted: {
+       statsLoading = true
+       aboutLoading = true
        immichApi.fetchServerStatistics()
        immichApi.fetchServerAbout()
    }
@@ -16,9 +22,21 @@ Page {
        target: immichApi
        onServerStatisticsReceived: {
            settingsPage.serverStats = stats
+           settingsPage.statsLoading = false
        }
        onServerAboutReceived: {
            settingsPage.serverAbout = about
+           settingsPage.aboutLoading = false
+       }
+       onErrorOccurred: {
+           if (statsLoading && !serverStats) {
+               statsFailed = true
+               statsLoading = false
+           }
+           if (aboutLoading && !serverAbout) {
+               aboutFailed = true
+               aboutLoading = false
+           }
        }
    }
 
@@ -90,7 +108,7 @@ Page {
                label: qsTrId("settingsPage.detailQuality")
                //% "Controls image quality when viewing photos in full screen. Preview is faster and uses less data, Original shows the full resolution image."
                description: qsTrId("settingsPage.detailQualityInfo")
-               currentIndex: settingsManager.detailQuality === "original" ? 1 : 0
+               currentIndex: settingsManager.detailQuality === "fullsize" ? 1 : 0
                menu: ContextMenu {
                    //% "Preview (faster, less data)"
                    MenuItem { text: qsTrId("settingsPage.detailQualityPreview") }
@@ -98,7 +116,7 @@ Page {
                    MenuItem { text: qsTrId("settingsPage.detailQualityOriginal") }
                }
                onCurrentIndexChanged: {
-                   var quality = currentIndex === 1 ? "original" : "preview"
+                   var quality = currentIndex === 1 ? "fullsize" : "preview"
                    if (quality !== settingsManager.detailQuality) {
                        settingsManager.detailQuality = quality
                    }
@@ -204,7 +222,20 @@ Page {
                text: qsTrId("settingsPage.serverStatistics")
            }
 
+           Label {
+               x: Theme.horizontalPageMargin
+               width: parent.width - 2 * Theme.horizontalPageMargin
+               visible: statsFailed && !serverStats
+               //% "Server statistics are not available at the moment."
+               text: qsTrId("settingsPage.serverStatisticsNotAvailable")
+               font.pixelSize: Theme.fontSizeSmall
+               color: Theme.secondaryHighlightColor
+               wrapMode: Text.WordWrap
+               horizontalAlignment: Text.AlignHCenter
+           }
+
            DetailItem {
+               visible: !statsFailed || serverStats
                //% "Total photos"
                label: qsTrId("settingsPage.totalPhotos")
                //% "Loading..."
@@ -212,6 +243,7 @@ Page {
            }
 
            DetailItem {
+               visible: !statsFailed || serverStats
                //% "Total videos"
                label: qsTrId("settingsPage.totalVideos")
                //% "Loading..."
@@ -219,6 +251,7 @@ Page {
            }
 
            DetailItem {
+               visible: !statsFailed || serverStats
                //% "Storage used"
                label: qsTrId("settingsPage.storageUsed")
                //% "Loading..."
@@ -226,6 +259,7 @@ Page {
            }
 
            DetailItem {
+               visible: !statsFailed || serverStats
                //% "Total assets"
                label: qsTrId("settingsPage.totalAssets")
                //% "Loading..."
@@ -238,6 +272,8 @@ Page {
                text: qsTrId("settingsPage.refreshStatistics")
                onClicked: {
                    settingsPage.serverStats = null
+                   settingsPage.statsFailed = false
+                   settingsPage.statsLoading = true
                    immichApi.fetchServerStatistics()
                }
            }
@@ -247,9 +283,22 @@ Page {
                text: qsTrId("settingsPage.aboutServer")
            }
 
+           Label {
+               x: Theme.horizontalPageMargin
+               width: parent.width - 2 * Theme.horizontalPageMargin
+               visible: aboutFailed && !serverAbout
+               //% "Server version info is not available at the moment."
+               text: qsTrId("settingsPage.aboutServerNotAvailable")
+               font.pixelSize: Theme.fontSizeSmall
+               color: Theme.secondaryHighlightColor
+               wrapMode: Text.WordWrap
+               horizontalAlignment: Text.AlignHCenter
+           }
+
            BackgroundItem {
                width: parent.width
                height: serverVersionItem.height
+               visible: !aboutFailed || serverAbout
                enabled: serverAbout && serverAbout.versionUrl
                onClicked: {
                    if (serverAbout && serverAbout.versionUrl) {

@@ -11,6 +11,20 @@ Page {
        anchors.fill: parent
        contentHeight: column.height
 
+       PullDownMenu {
+           MenuItem {
+               //% "Edit album"
+               text: qsTrId("albumInfoPage.editAlbum")
+               onClicked: {
+                   pageStack.push(Qt.resolvedUrl("EditAlbumDialog.qml"), {
+                       albumId: page.albumId,
+                       albumName: albumInfo ? albumInfo.albumName : "",
+                       albumDescription: albumInfo && albumInfo.description ? albumInfo.description : ""
+                   })
+               }
+           }
+       }
+
        Column {
            id: column
            width: page.width
@@ -103,7 +117,17 @@ Page {
    Connections {
        target: immichApi
        onAlbumDetailsReceived: {
-           albumInfo = details
+           if (details.id === page.albumId) {
+               albumInfo = details
+           }
+       }
+       onAlbumUpdated: {
+           if (albumId === page.albumId) {
+               var updated = albumInfo
+               updated.albumName = albumName
+               updated.description = description
+               albumInfo = updated
+           }
        }
    }
 }

@@ -28,10 +28,10 @@ public:
     Q_INVOKABLE void fetchSearchSuggestions(const QString &type);
     Q_INVOKABLE void toggleFavorite(const QStringList &assetIds, bool isFavorite);
     Q_INVOKABLE void getAssetInfo(const QString &assetId);
-    Q_INVOKABLE void updateAssetDescription(const QString &assetId, const QString &description);
     Q_INVOKABLE void uploadAsset(const QString &filePath);
+    Q_INVOKABLE void updateAsset(const QString &assetId, const QString &description, double latitude = 0, double longitude = 0, bool updateLocation = false);
     Q_INVOKABLE void deleteAssets(const QStringList &assetIds);
-    Q_INVOKABLE void downloadAsset(const QString &assetId, const QString &fileName);
+    Q_INVOKABLE void downloadAsset(const QString &assetId);
     Q_INVOKABLE void addAssetsToAlbum(const QString &albumId, const QStringList &assetIds);
     Q_INVOKABLE void createSharedLink(const QString &type, const QVariant &ids, const QString &password, const QString &expiresAt, bool allowDownload, bool allowUpload);
     Q_INVOKABLE void fetchMemories();
@@ -50,7 +50,7 @@ signals:
     void peopleReceived(const QJsonArray &people);
     void searchSuggestionsReceived(const QString &type, const QJsonArray &suggestions);
     void assetInfoReceived(const QJsonObject &info);
-    void assetDescriptionUpdated(const QString &assetId, const QString &description);
+    void assetUpdated(const QString &assetId, const QString &description, double latitude, double longitude);
     void favoritesToggled(const QStringList &assetIds, bool isFavorite);
     void assetUploaded(const QString &assetId);
     void uploadProgress(int current, int total);
@@ -76,7 +76,6 @@ private slots:
     void onUploadReplyFinished();
     void onUploadProgress(qint64 bytesSent, qint64 bytesTotal);
     void onDeleteReplyFinished();
-    void onDownloadReplyFinished();
     void onAddToAlbumReplyFinished();
     void onSharedLinkReplyFinished();
 
@@ -87,6 +86,7 @@ private:
 
     QNetworkRequest createAuthenticatedRequest(const QUrl &url) const;
     void handleNetworkError(QNetworkReply *reply);
+    void startAssetDownload(const QString &assetId, const QString &fileName);
 
     // Generic reply handler
     void connectReply(QNetworkReply *reply, std::function<void(const QByteArray&)> onSuccess);
