@@ -47,6 +47,19 @@ QString AuthManager::email() const
     return m_email;
 }
 
+QString AuthManager::userId() const
+{
+    return m_userId;
+}
+
+void AuthManager::setUserId(const QString &userId)
+{
+    if (m_userId != userId) {
+        m_userId = userId;
+        emit userIdChanged();
+    }
+}
+
 QString AuthManager::storedPassword() const
 {
     return m_storage->loadPassword();
@@ -99,7 +112,7 @@ void AuthManager::login(const QString &email, const QString &password)
     setEmail(email);
     m_storage->savePassword(password);
 
-    QUrl url(m_serverUrl + "/api/auth/login");
+    QUrl url(m_serverUrl + QStringLiteral("/api/auth/login"));
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
@@ -130,6 +143,7 @@ void AuthManager::onLoginReplyFinished()
 
         qInfo() << "AuthManager: Login succeeded";
         setAuthenticated(true);
+        fetchCurrentUser();
         emit loginSucceeded();
     } else {
         QString errorString = reply->errorString();
@@ -144,6 +158,9 @@ void AuthManager::onLoginReplyFinished()
         }
         
         qInfo() << "AuthManager: Login failed:" << errorString;
+        m_accessToken.clear();
+        m_storage->saveAccessToken(QString());
+        setAuthenticated(false);
         emit loginFailed(errorString);
     }
 
@@ -155,9 +172,11 @@ void AuthManager::logout()
     qInfo() << "AuthManager: Logging out";
     m_accessToken.clear();
     m_email.clear();
+    m_userId.clear();
     m_storage->clearAll();
     setAuthenticated(false);
     emit emailChanged();
+    emit userIdChanged();
 }
 
 QString AuthManager::getAccessToken() const
@@ -167,7 +186,7 @@ QString AuthManager::getAccessToken() const
 
 void AuthManager::validateToken()
 {
-    QUrl url(m_serverUrl + "/api/auth/validateToken");
+    QUrl url(m_serverUrl + QStringLiteral("/api/auth/validateToken"));
     QNetworkRequest request(url);
     request.setRawHeader("Authorization", QString("Bearer %1").arg(m_accessToken).toUtf8());
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
@@ -189,6 +208,7 @@ void AuthManager::onValidateTokenReplyFinished()
         if (obj["authStatus"].toBool()) {
             qInfo() << "AuthManager: Token validated successfully";
             setAuthenticated(true);
+            fetchCurrentUser();
             emit loginSucceeded();
         } else {
             qInfo() << "AuthManager: Token invalid, re-logging in";
@@ -197,6 +217,37 @@ void AuthManager::onValidateTokenReplyFinished()
     } else {
         qInfo() << "AuthManager: Token validation failed, re-logging in";
         reloginWithStoredCredentials();
+    }
+
+    reply->deleteLater();
+}
+
+void AuthManager::fetchCurrentUser()
+{
+    QUrl url(m_serverUrl + QStringLiteral("/api/users/me"));
+    QNetworkRequest request(url);
+    request.setRawHeader("Authorization", QString("Bearer %1").arg(m_accessToken).toUtf8());
+
+    QNetworkReply *reply = m_networkManager->get(request);
+    connect(reply, &QNetworkReply::finished, this, &AuthManager::onUserMeReplyFinished);
+}
+
+void AuthManager::onUserMeReplyFinished()
+{
+    QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
+    if (!reply) return;
+
+    if (reply->error() == QNetworkReply::NoError) {
+        QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
+        QJsonObject obj = doc.object();
+        setUserId(obj["id"].toString());
+        QString email = obj["email"].toString();
+        if (!email.isEmpty()) {
+            setEmail(email);
+        }
+        qInfo() << "AuthManager: Current user fetched, id:" << m_userId;
+    } else {
+        qWarning() << "AuthManager: Failed to fetch current user:" << reply->errorString();
     }
 
     reply->deleteLater();

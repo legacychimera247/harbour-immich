@@ -126,8 +126,7 @@ Dialog {
                    var expiresAt = expirationCombo.getExpiresAt()
                    var password = passwordField.text
                    var ids = shareType === "INDIVIDUAL" ? assetIds : albumId
-                   immichApi.createSharedLink(shareType, ids, password, expiresAt,
-                                              allowDownloadSwitch.checked, allowUploadSwitch.checked)
+                   immichApi.createSharedLink(shareType, ids, password, expiresAt, allowDownloadSwitch.checked, allowUploadSwitch.checked)
                }
            }
 

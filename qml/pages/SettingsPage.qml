@@ -149,8 +149,6 @@ Page {
                    MenuItem { text: qsTrId("settingsPage.memoriesThumbnailSizeMedium") }
                    //% "Large"
                    MenuItem { text: qsTrId("settingsPage.memoriesThumbnailSizeLarge") }
-                   //% "Largest"
-                   MenuItem { text: qsTrId("settingsPage.memoriesThumbnailSizeLargest") }
                }
                onCurrentIndexChanged: {
                    if (currentIndex !== settingsManager.memoriesThumbnailSize) {
@@ -184,6 +182,34 @@ Page {
                    if (pos !== settingsManager.scrollToTopPosition) {
                        settingsManager.scrollToTopPosition = pos
                    }
+               }
+           }
+
+           SectionHeader {
+               //% "Cover"
+               text: qsTrId("settingsPage.cover")
+           }
+
+           TextSwitch {
+               //% "Show assets on cover"
+               text: qsTrId("settingsPage.coverShowAssets")
+               //% "Display photos on the app cover instead of the default icon."
+               description: qsTrId("settingsPage.coverShowAssetsInfo")
+               checked: settingsManager.coverShowAssets
+               onCheckedChanged: {
+                   settingsManager.coverShowAssets = checked
+               }
+           }
+
+           TextSwitch {
+               //% "Slideshow rotation"
+               text: qsTrId("settingsPage.coverSlideshow")
+               //% "Continuously rotate through images while the cover is visible. When off, the image changes only once when the app is minimized."
+               description: qsTrId("settingsPage.coverSlideshowInfo")
+               enabled: settingsManager.coverShowAssets
+               checked: settingsManager.coverSlideshow
+               onCheckedChanged: {
+                   settingsManager.coverSlideshow = checked
                }
            }
 
@@ -324,7 +350,7 @@ Page {
            DetailItem {
                //% "Version"
                label: qsTrId("settingsPage.version")
-               value: "0.1.2"
+               value: "0.2.0"
            }
 
            DetailItem {

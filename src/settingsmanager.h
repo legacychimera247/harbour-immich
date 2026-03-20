@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QSettings>
+#include <QStringList>
 
 class SettingsManager : public QObject
 {
@@ -12,6 +13,8 @@ class SettingsManager : public QObject
     Q_PROPERTY(int memoriesThumbnailSize READ memoriesThumbnailSize WRITE setMemoriesThumbnailSize NOTIFY memoriesThumbnailSizeChanged)
     Q_PROPERTY(bool showMemoriesBar READ showMemoriesBar WRITE setShowMemoriesBar NOTIFY showMemoriesBarChanged)
     Q_PROPERTY(QString scrollToTopPosition READ scrollToTopPosition WRITE setScrollToTopPosition NOTIFY scrollToTopPositionChanged)
+    Q_PROPERTY(bool coverShowAssets READ coverShowAssets WRITE setCoverShowAssets NOTIFY coverShowAssetsChanged)
+    Q_PROPERTY(bool coverSlideshow READ coverSlideshow WRITE setCoverSlideshow NOTIFY coverSlideshowChanged)
 
 public:
     explicit SettingsManager(QObject *parent = nullptr);
@@ -31,12 +34,20 @@ public:
     QString scrollToTopPosition() const;
     void setScrollToTopPosition(const QString &position);
 
+    bool coverShowAssets() const;
+    void setCoverShowAssets(bool show);
+
+    bool coverSlideshow() const;
+    void setCoverSlideshow(bool enabled);
+
 signals:
     void detailQualityChanged();
     void assetsPerRowChanged();
     void memoriesThumbnailSizeChanged();
     void showMemoriesBarChanged();
     void scrollToTopPositionChanged();
+    void coverShowAssetsChanged();
+    void coverSlideshowChanged();
 
 private:
     QSettings m_settings;

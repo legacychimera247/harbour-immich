@@ -57,6 +57,32 @@ Page {
        favoriteSwitch.checked = false
    }
 
+   function extractPersonThumbnailId(person) {
+       if (!person.thumbnailPath) {
+           return person.id
+       }
+
+       var pathParts = person.thumbnailPath.split('/')
+       if (pathParts.length === 0) {
+           return person.id
+       }
+
+       var filename = pathParts[pathParts.length - 1]
+       var thumbnailId = filename.replace('.jpeg', '').replace('.jpg', '')
+       return thumbnailId || person.id
+   }
+
+   function normalizeSuggestions(suggestions) {
+       var result = []
+       for (var i = 0; i < suggestions.length; i++) {
+           var value = suggestions[i]
+           //% "Unknown"
+           var displayValue = value === null ? qsTrId("searchPage.unknown") : value
+           result.push({ displayValue: displayValue, actualValue: value || "" })
+       }
+       return result
+   }
+
    function performSearch() {
        var params = {}
 
@@ -252,11 +278,6 @@ Page {
            SectionHeader {
                //% "People"
                text: qsTrId("searchPage.people")
-           }
-
-           // Hidden model for storing people data
-           ListModel {
-               id: peopleModel
            }
 
            ValueButton {
@@ -554,46 +575,21 @@ Page {
        target: immichApi
 
        onPeopleReceived: {
-           peopleModel.clear()
            var newPeopleData = []
            for (var i = 0; i < people.length; i++) {
                var person = people[i]
-               // Extract person ID from thumbnailPath if available, otherwise use person.id
-               var personId = person.id
-               if (person.thumbnailPath) {
-                   // thumbnailPath format: "data/thumbs/.../{id}.jpeg"
-                   // Extract the filename without extension
-                   var pathParts = person.thumbnailPath.split('/')
-                   if (pathParts.length > 0) {
-                       var filename = pathParts[pathParts.length - 1]
-                       var idMatch = filename.replace('.jpeg', '').replace('.jpg', '')
-                       if (idMatch) {
-                           personId = idMatch
-                       }
-                   }
-               }
                var personData = {
                    personId: person.id,
                    name: person.name || "",
-                   thumbnailId: personId
+                   thumbnailId: extractPersonThumbnailId(person)
                }
-               peopleModel.append(personData)
                newPeopleData.push(personData)
            }
            peopleData = newPeopleData
        }
 
        onSearchSuggestionsReceived: {
-           var result = []
-           for (var i = 0; i < suggestions.length; i++) {
-               var value = suggestions[i]
-               //% "Unknown"
-               var displayValue = value === null ? qsTrId("searchPage.unknown") : value
-               result.push({
-                   displayValue: displayValue,
-                   actualValue: value || ""
-               })
-           }
+           var result = normalizeSuggestions(suggestions)
 
            if (type === "state") {
                stateSuggestions = result

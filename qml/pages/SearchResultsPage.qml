@@ -263,7 +263,7 @@ Page {
    ScrollToTopButton {
        targetFlickable: resultsGrid
        actionBarHeight: selectionActionBar.visible ? selectionActionBar.contentHeight : 0
-       forceHidden: selectionActionBar.menuOpen
+       forceHidden: selectionActionBar.activeMenuType !== ""
    }
 
    NotificationBanner {

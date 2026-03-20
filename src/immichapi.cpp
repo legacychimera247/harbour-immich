@@ -18,12 +18,37 @@
 #include <QStandardPaths>
 #include <QDateTime>
 #include <QTimer>
+#include <QMediaPlayer>
+#include <QMediaContent>
+
+namespace {
+QJsonArray toJsonStringArray(const QStringList &values)
+{
+    QJsonArray array;
+    for (const QString &value : values) {
+        array.append(value);
+    }
+    return array;
+}
+
+QBuffer *createJsonBuffer(const QJsonObject &json) {
+    QBuffer *buffer = new QBuffer();
+    buffer->setData(QJsonDocument(json).toJson());
+    buffer->open(QIODevice::ReadOnly);
+    return buffer;
+}
+}
 
 ImmichApi::ImmichApi(AuthManager *authManager, QObject *parent)
    : QObject(parent)
    , m_networkManager(new QNetworkAccessManager(this))
    , m_authManager(authManager)
    , m_settingsManager(nullptr)
+   , m_uploadIndex(0)
+   , m_uploadSuccessCount(0)
+   , m_uploadFailCount(0)
+   , m_uploadCancelled(false)
+   , m_currentUploadReply(nullptr)
 {
 }
 
@@ -72,25 +97,28 @@ void ImmichApi::fetchAlbumDetails(const QString &albumId)
 
 void ImmichApi::searchByParameters(const QVariantMap &searchParams)
 {
-   QUrl url(m_authManager->serverUrl() + "/api/search/metadata");
+   QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/search/metadata"));
    QNetworkRequest request = createAuthenticatedRequest(url);
 
    QJsonObject json;
 
-   // Context search
-   if (searchParams.contains("query") && !searchParams["query"].toString().isEmpty()) {
-       json["q"] = searchParams["query"].toString();
-   }
+   // Helper: copy non-empty string param (with optional JSON key rename)
+   auto copyString = [&](const QString &key, const QString &jsonKey = QString()) {
+       if (searchParams.contains(key) && !searchParams[key].toString().isEmpty()) {
+           json[jsonKey.isEmpty() ? key : jsonKey] = searchParams[key].toString();
+       }
+   };
 
-   // Filename search
-   if (searchParams.contains("originalFileName") && !searchParams["originalFileName"].toString().isEmpty()) {
-       json["originalFileName"] = searchParams["originalFileName"].toString();
-   }
+   // Helper: copy bool param
+   auto copyBool = [&](const QString &key) {
+       if (searchParams.contains(key))
+           json[key] = searchParams[key].toBool();
+   };
 
-   // Description search
-   if (searchParams.contains("description") && !searchParams["description"].toString().isEmpty()) {
-       json["description"] = searchParams["description"].toString();
-   }
+   // Text search
+   copyString("query", "q");
+   copyString("originalFileName");
+   copyString("description");
 
    // People
    if (searchParams.contains("personIds")) {
@@ -103,34 +131,18 @@ void ImmichApi::searchByParameters(const QVariantMap &searchParams)
    }
 
    // Place
-   if (searchParams.contains("state") && !searchParams["state"].toString().isEmpty()) {
-       json["state"] = searchParams["state"].toString();
-   }
-   if (searchParams.contains("country") && !searchParams["country"].toString().isEmpty()) {
-       json["country"] = searchParams["country"].toString();
-   }
-   if (searchParams.contains("city") && !searchParams["city"].toString().isEmpty()) {
-       json["city"] = searchParams["city"].toString();
-   }
+   copyString("state");
+   copyString("country");
+   copyString("city");
 
    // Camera
-   if (searchParams.contains("make") && !searchParams["make"].toString().isEmpty()) {
-       json["make"] = searchParams["make"].toString();
-   }
-   if (searchParams.contains("model") && !searchParams["model"].toString().isEmpty()) {
-       json["model"] = searchParams["model"].toString();
-   }
-   if (searchParams.contains("lensModel") && !searchParams["lensModel"].toString().isEmpty()) {
-       json["lensModel"] = searchParams["lensModel"].toString();
-   }
+   copyString("make");
+   copyString("model");
+   copyString("lensModel");
 
    // Date range
-   if (searchParams.contains("takenAfter") && !searchParams["takenAfter"].toString().isEmpty()) {
-       json["takenAfter"] = searchParams["takenAfter"].toString();
-   }
-   if (searchParams.contains("takenBefore") && !searchParams["takenBefore"].toString().isEmpty()) {
-       json["takenBefore"] = searchParams["takenBefore"].toString();
-   }
+   copyString("takenAfter");
+   copyString("takenBefore");
 
    // Media type
    if (searchParams.contains("type") && searchParams["type"].toString() != "all") {
@@ -138,32 +150,18 @@ void ImmichApi::searchByParameters(const QVariantMap &searchParams)
    }
 
    // Display options
-   if (searchParams.contains("withArchived")) {
-       json["withArchived"] = searchParams["withArchived"].toBool();
-   }
-   if (searchParams.contains("isNotInAlbum")) {
-       json["isNotInAlbum"] = searchParams["isNotInAlbum"].toBool();
-   }
-   if (searchParams.contains("isFavorite")) {
-       json["isFavorite"] = searchParams["isFavorite"].toBool();
-   }
+   copyBool("withArchived");
+   copyBool("isNotInAlbum");
+   copyBool("isFavorite");
 
    // Sort order
-   if (searchParams.contains("order")) {
-       json["order"] = searchParams["order"].toString();
-   } else {
-       json["order"] = "desc"; // Default to descending
-   }
+   json["order"] = searchParams.contains("order") ? searchParams["order"].toString() : QStringLiteral("desc");
 
    // Pagination
    if (searchParams.contains("page")) {
        json["page"] = searchParams["page"].toInt();
    }
-   if (searchParams.contains("size")) {
-       json["size"] = searchParams["size"].toInt();
-   } else {
-       json["size"] = 100; // Default size
-   }
+   json["size"] = searchParams.contains("size") ? searchParams["size"].toInt() : 100;
 
    QJsonDocument doc(json);
    QNetworkReply *reply = m_networkManager->post(request, doc.toJson());
@@ -197,7 +195,7 @@ void ImmichApi::onSearchByParametersReplyFinished()
 
 void ImmichApi::smartSearch(const QString &assetId)
 {
-    QUrl url(m_authManager->serverUrl() + "/api/search/smart");
+    QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/search/smart"));
     QNetworkRequest request = createAuthenticatedRequest(url);
 
     QJsonObject json;
@@ -230,7 +228,7 @@ void ImmichApi::fetchPeople()
 
 void ImmichApi::fetchSearchSuggestions(const QString &type)
 {
-   QUrl url(m_authManager->serverUrl() + "/api/search/suggestions");
+   QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/search/suggestions"));
    QUrlQuery query;
    query.addQueryItem("type", type);
    if (type == "state" || type == "country" || type == "camera-make" || type == "camera-model" || type == "camera-lens-model") {
@@ -264,15 +262,11 @@ void ImmichApi::onSearchSuggestionsReplyFinished()
 
 void ImmichApi::toggleFavorite(const QStringList &assetIds, bool isFavorite)
 {
-   QUrl url(m_authManager->serverUrl() + "/api/assets");
+   QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/assets"));
    QNetworkRequest request = createAuthenticatedRequest(url);
 
    QJsonObject json;
-   QJsonArray idsArray;
-   for (const QString &id : assetIds) {
-       idsArray.append(id);
-   }
-   json["ids"] = idsArray;
+   json["ids"] = toJsonStringArray(assetIds);
    json["isFavorite"] = isFavorite;
    QJsonDocument doc(json);
 
@@ -341,7 +335,7 @@ QString ImmichApi::serverUrl() const
 
 void ImmichApi::createSharedLink(const QString &type, const QVariant &ids, const QString &password, const QString &expiresAt, bool allowDownload, bool allowUpload)
 {
-   QUrl url(m_authManager->serverUrl() + "/api/shared-links");
+   QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/shared-links"));
    QNetworkRequest request = createAuthenticatedRequest(url);
 
    QJsonObject json;
@@ -359,11 +353,7 @@ void ImmichApi::createSharedLink(const QString &type, const QVariant &ids, const
        // For individual asset sharing, ids is a QStringList
        QStringList assetIds = ids.toStringList();
        if (!assetIds.isEmpty()) {
-           QJsonArray assetsArray;
-           for (const QString &id : assetIds) {
-               assetsArray.append(id);
-           }
-           json["assetIds"] = assetsArray;
+           json["assetIds"] = toJsonStringArray(assetIds);
        }
    }
 
@@ -407,13 +397,13 @@ void ImmichApi::handleNetworkError(QNetworkReply *reply)
    emit errorOccurred(errorString);
 }
 
-void ImmichApi::connectReply(QNetworkReply *reply, std::function<void(const QByteArray&)> onSuccess)
+void ImmichApi::connectReply(QNetworkReply *reply, std::function<void(const QByteArray&)> onSuccess, int timeoutMs)
 {
-   // Timeout after 30 seconds
    QTimer *timer = new QTimer(reply);
    timer->setSingleShot(true);
-   timer->setInterval(30000);
+   timer->setInterval(timeoutMs);
    connect(timer, &QTimer::timeout, reply, &QNetworkReply::abort);
+   connect(reply, &QNetworkReply::finished, timer, &QTimer::stop);
    timer->start();
 
    connect(reply, &QNetworkReply::finished, this, [this, reply, onSuccess]() {
@@ -426,88 +416,145 @@ void ImmichApi::connectReply(QNetworkReply *reply, std::function<void(const QByt
    });
 }
 
-void ImmichApi::uploadAsset(const QString &filePath)
+void ImmichApi::uploadAssets(const QStringList &filePaths)
 {
-   QFile *file = new QFile(filePath);
-   if (!file->open(QIODevice::ReadOnly)) {
-       emit uploadFailed("Could not open file: " + filePath);
-       delete file;
-       return;
-   }
+  if (filePaths.isEmpty()) return;
 
-   QFileInfo fileInfo(filePath);
-   QMimeDatabase mimeDb;
-   QString mimeType = mimeDb.mimeTypeForFile(fileInfo).name();
+  qInfo() << "ImmichApi: Starting upload of" << filePaths.size() << "files";
+  m_uploadQueue = filePaths;
+  m_uploadIndex = 0;
+  m_uploadSuccessCount = 0;
+  m_uploadFailCount = 0;
+  m_uploadCancelled = false;
+  m_currentUploadReply = nullptr;
 
-   QHttpMultiPart *multiPart = new QHttpMultiPart(QHttpMultiPart::FormDataType);
-
-   QHttpPart filePart;
-   filePart.setHeader(QNetworkRequest::ContentTypeHeader, QVariant(mimeType));
-   filePart.setHeader(QNetworkRequest::ContentDispositionHeader,
-       QVariant("form-data; name=\"assetData\"; filename=\"" + fileInfo.fileName() + "\""));
-   filePart.setBodyDevice(file);
-   file->setParent(multiPart);
-
-   multiPart->append(filePart);
-
-   QUrl url(m_authManager->serverUrl() + "/api/assets/upload");
-   QNetworkRequest request(url);
-   request.setRawHeader("Authorization", QString("Bearer %1").arg(m_authManager->getAccessToken()).toUtf8());
-
-   QNetworkReply *reply = m_networkManager->post(request, multiPart);
-   multiPart->setParent(reply);
-
-   connect(reply, &QNetworkReply::finished, this, &ImmichApi::onUploadReplyFinished);
-   connect(reply, &QNetworkReply::uploadProgress, this, &ImmichApi::onUploadProgress);
+  uploadNextFile();
 }
 
-void ImmichApi::onUploadReplyFinished()
+void ImmichApi::cancelUpload()
 {
-   QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
-   if (!reply) return;
-
-
-   if (reply->error() == QNetworkReply::NoError) {
-       QByteArray response = reply->readAll();
-       QJsonDocument doc = QJsonDocument::fromJson(response);
-       QJsonObject obj = doc.object();
-       QString assetId = obj["id"].toString();
-       emit assetUploaded(assetId);
-   } else {
-       QString errorMsg = reply->errorString();
-       emit uploadFailed(errorMsg);
-       emit errorOccurred(errorMsg);
-   }
-
-   reply->deleteLater();
+  qInfo() << "ImmichApi: Upload cancelled";
+  m_uploadCancelled = true;
+  if (m_currentUploadReply && !m_currentUploadReply->isFinished()) {
+      m_currentUploadReply->abort();
+  }
 }
 
-
-void ImmichApi::onUploadProgress(qint64 bytesSent, qint64 bytesTotal)
+QHttpMultiPart* ImmichApi::buildUploadMultiPart(QFile *file, const QFileInfo &fileInfo)
 {
-   if (bytesTotal > 0) {
-       int progress = (bytesSent * 100) / bytesTotal;
-       emit uploadProgress(progress, 100);
-   }
+    QMimeDatabase mimeDb;
+    QString mimeType = mimeDb.mimeTypeForFile(fileInfo).name();
+    QString isoDate = fileInfo.lastModified().toUTC().toString(Qt::ISODate);
+    QString deviceAssetId = QString("%1-%2").arg(fileInfo.fileName()).arg(fileInfo.lastModified().toMSecsSinceEpoch());
+
+    QHttpMultiPart *multiPart = new QHttpMultiPart(QHttpMultiPart::FormDataType);
+
+    auto addFormField = [&](const char *name, const QByteArray &value) {
+        QHttpPart part;
+        part.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant(QStringLiteral("form-data; name=\"%1\"").arg(name)));
+        part.setBody(value);
+        multiPart->append(part);
+    };
+
+    // assetData
+    QHttpPart filePart;
+    filePart.setHeader(QNetworkRequest::ContentTypeHeader, QVariant(mimeType));
+    filePart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"assetData\"; filename=\"" + fileInfo.fileName() + "\""));
+    filePart.setBodyDevice(file);
+    file->setParent(multiPart);
+    multiPart->append(filePart);
+
+    addFormField("deviceAssetId", deviceAssetId.toUtf8());
+    addFormField("deviceId", "harbour-immich");
+    addFormField("fileCreatedAt", isoDate.toUtf8());
+    addFormField("fileModifiedAt", isoDate.toUtf8());
+    addFormField("isFavorite", "false");
+
+    return multiPart;
+}
+
+void ImmichApi::uploadNextFile()
+{
+  if (m_uploadCancelled || m_uploadIndex >= m_uploadQueue.size()) {
+      qInfo() << "ImmichApi: Upload batch complete -" << m_uploadSuccessCount << "succeeded," << m_uploadFailCount << "failed";
+      emit uploadAllComplete(m_uploadSuccessCount, m_uploadFailCount);
+      m_currentUploadReply = nullptr;
+      return;
+  }
+
+  QString filePath = m_uploadQueue.at(m_uploadIndex);
+  QFileInfo fileInfo(filePath);
+
+  QFile *file = new QFile(filePath);
+  if (!file->open(QIODevice::ReadOnly)) {
+      qWarning() << "ImmichApi: Could not open file:" << filePath;
+      emit uploadFailed(filePath, "Could not open file");
+      m_uploadFailCount++;
+      m_uploadIndex++;
+      uploadNextFile();
+      delete file;
+      return;
+  }
+
+  QHttpMultiPart *multiPart = buildUploadMultiPart(file, fileInfo);
+
+  QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/assets"));
+  QNetworkRequest request(url);
+  request.setRawHeader("Authorization", QString("Bearer %1").arg(m_authManager->getAccessToken()).toUtf8());
+
+  qInfo() << "ImmichApi: Uploading file" << (m_uploadIndex + 1) << "/" << m_uploadQueue.size() << "-" << fileInfo.fileName();
+
+  QNetworkReply *reply = m_networkManager->post(request, multiPart);
+  multiPart->setParent(reply);
+  m_currentUploadReply = reply;
+
+  int currentFileIndex = m_uploadIndex;
+  int totalFiles = m_uploadQueue.size();
+
+  connect(reply, &QNetworkReply::uploadProgress, this, [this, currentFileIndex, totalFiles](qint64 bytesSent, qint64 bytesTotal) {
+      emit uploadFileProgress(currentFileIndex, totalFiles, bytesSent, bytesTotal);
+  });
+
+  connect(reply, &QNetworkReply::finished, this, [this, reply, filePath]() {
+      m_currentUploadReply = nullptr;
+
+      if (reply->error() == QNetworkReply::NoError) {
+          QByteArray response = reply->readAll();
+          QJsonDocument doc = QJsonDocument::fromJson(response);
+          QJsonObject obj = doc.object();
+          QString assetId = obj["id"].toString();
+          QString status = obj["status"].toString();
+          if (status == QStringLiteral("duplicate")) {
+              qInfo() << "ImmichApi: Asset already exists (duplicate):" << filePath;
+          } else if (status == QStringLiteral("replaced")) {
+              qInfo() << "ImmichApi: Asset replaced:" << filePath;
+          } else {
+              qInfo() << "ImmichApi: Asset created:" << filePath;
+          }
+          m_uploadSuccessCount++;
+          emit assetUploaded(assetId, filePath, status);
+      } else if (reply->error() != QNetworkReply::OperationCanceledError) {
+          QString errorMsg = reply->errorString();
+          qWarning() << "ImmichApi: Upload failed for" << filePath << ":" << errorMsg;
+          m_uploadFailCount++;
+          emit uploadFailed(filePath, errorMsg);
+      }
+
+      reply->deleteLater();
+      m_uploadIndex++;
+      uploadNextFile();
+  });
 }
 
 void ImmichApi::deleteAssets(const QStringList &assetIds)
 {
-   QUrl url(m_authManager->serverUrl() + "/api/assets");
+   QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/assets"));
    QNetworkRequest request = createAuthenticatedRequest(url);
 
    QJsonObject json;
-   QJsonArray idsArray;
-   for (const QString &id : assetIds) {
-       idsArray.append(id);
-   }
-   json["ids"] = idsArray;
-   QJsonDocument doc(json);
+   json["ids"] = toJsonStringArray(assetIds);
 
-   QByteArray data = doc.toJson();
-   QBuffer *buffer = new QBuffer();
-   buffer->setData(data);
-   buffer->open(QIODevice::ReadOnly);
+   QBuffer *buffer = createJsonBuffer(json);
 
    QNetworkReply *reply = m_networkManager->sendCustomRequest(request, "DELETE", buffer);
    buffer->setParent(reply);
@@ -551,7 +598,7 @@ void ImmichApi::downloadAsset(const QString &assetId)
 
 void ImmichApi::startAssetDownload(const QString &assetId, const QString &fileName)
 {
-   QUrl url(m_authManager->serverUrl() + "/api/assets/" + assetId + "/original");
+   QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/assets/") + assetId + QStringLiteral("/original"));
    QNetworkRequest request = createAuthenticatedRequest(url);
    request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
 
@@ -593,7 +640,13 @@ void ImmichApi::startAssetDownload(const QString &assetId, const QString &fileNa
               } while (QFile::exists(finalPath));
           }
 
-          QFile::rename(tempPath, finalPath);
+          if (!QFile::rename(tempPath, finalPath)) {
+              file->remove();
+              delete file;
+              emit errorOccurred(QStringLiteral("Failed to finalize download: %1").arg(finalPath));
+              reply->deleteLater();
+              return;
+          }
           delete file;
           qInfo() << "ImmichApi: Download complete:" << finalPath;
           emit assetDownloaded(assetId, finalPath);
@@ -609,20 +662,35 @@ void ImmichApi::startAssetDownload(const QString &assetId, const QString &fileNa
 
 void ImmichApi::addAssetsToAlbum(const QString &albumId, const QStringList &assetIds)
 {
-   QUrl url(m_authManager->serverUrl() + "/api/albums/" + albumId + "/assets");
+   QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/albums/") + albumId + QStringLiteral("/assets"));
    QNetworkRequest request = createAuthenticatedRequest(url);
 
    QJsonObject json;
-   QJsonArray idsArray;
-   for (const QString &id : assetIds) {
-       idsArray.append(id);
-   }
-   json["ids"] = idsArray;
+   json["ids"] = toJsonStringArray(assetIds);
    QJsonDocument doc(json);
 
    QNetworkReply *reply = m_networkManager->put(request, doc.toJson());
    reply->setProperty("albumId", albumId);
    connect(reply, &QNetworkReply::finished, this, &ImmichApi::onAddToAlbumReplyFinished);
+}
+
+void ImmichApi::removeAssetsFromAlbum(const QString &albumId, const QStringList &assetIds)
+{
+    qInfo() << "ImmichApi: Removing" << assetIds.size() << "assets from album:" << albumId;
+    QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/albums/") + albumId + QStringLiteral("/assets"));
+    QNetworkRequest request = createAuthenticatedRequest(url);
+
+    QJsonObject json;
+    json["ids"] = toJsonStringArray(assetIds);
+
+    QBuffer *buffer = createJsonBuffer(json);
+
+    QNetworkReply *reply = m_networkManager->sendCustomRequest(request, "DELETE", buffer);
+    buffer->setParent(reply);
+    QString savedAlbumId = albumId;
+    connectReply(reply, [this, savedAlbumId](const QByteArray &) {
+        emit assetsRemovedFromAlbum(savedAlbumId);
+    });
 }
 
 void ImmichApi::onAddToAlbumReplyFinished()
@@ -673,9 +741,9 @@ void ImmichApi::fetchUsers()
     });
 }
 
-void ImmichApi::addUsersToAlbum(const QString &albumId, const QStringList &userIds)
+void ImmichApi::addUsersToAlbum(const QString &albumId, const QStringList &userIds, const QString &role)
 {
-    qInfo() << "ImmichApi: Adding" << userIds.size() << "users to album:" << albumId;
+    qInfo() << "ImmichApi: Adding" << userIds.size() << "users to album:" << albumId << "role:" << role;
     QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/albums/") + albumId + QStringLiteral("/users"));
     QNetworkRequest request = createAuthenticatedRequest(url);
 
@@ -683,7 +751,7 @@ void ImmichApi::addUsersToAlbum(const QString &albumId, const QStringList &userI
     for (const QString &userId : userIds) {
         QJsonObject userObj;
         userObj["userId"] = userId;
-        userObj["role"] = QStringLiteral("editor");
+        userObj["role"] = role;
         albumUsers.append(userObj);
     }
     QJsonObject json;
@@ -694,6 +762,36 @@ void ImmichApi::addUsersToAlbum(const QString &albumId, const QStringList &userI
     QString savedAlbumId = albumId;
     connectReply(reply, [this, savedAlbumId](const QByteArray &) {
         emit usersAddedToAlbum(savedAlbumId);
+    });
+}
+
+void ImmichApi::updateAlbumUserRole(const QString &albumId, const QString &userId, const QString &role)
+{
+    qInfo() << "ImmichApi: Updating user" << userId << "role to" << role << "in album:" << albumId;
+    QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/albums/") + albumId + QStringLiteral("/user/") + userId);
+    QNetworkRequest request = createAuthenticatedRequest(url);
+
+    QJsonObject json;
+    json["role"] = role;
+
+    QJsonDocument doc(json);
+    QNetworkReply *reply = m_networkManager->put(request, doc.toJson());
+    QString savedAlbumId = albumId;
+    connectReply(reply, [this, savedAlbumId](const QByteArray &) {
+        emit albumUserRoleUpdated(savedAlbumId);
+    });
+}
+
+void ImmichApi::removeAlbumUser(const QString &albumId, const QString &userId)
+{
+    qInfo() << "ImmichApi: Removing user" << userId << "from album:" << albumId;
+    QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/albums/") + albumId + QStringLiteral("/user/") + userId);
+    QNetworkRequest request = createAuthenticatedRequest(url);
+
+    QNetworkReply *reply = m_networkManager->deleteResource(request);
+    QString savedAlbumId = albumId;
+    connectReply(reply, [this, savedAlbumId](const QByteArray &) {
+        emit albumUserRemoved(savedAlbumId);
     });
 }
 
@@ -761,7 +859,7 @@ void ImmichApi::createAlbum(const QString &albumName, const QString &description
     });
 }
 
-void ImmichApi::updateAlbum(const QString &albumId, const QString &albumName, const QString &description)
+void ImmichApi::updateAlbum(const QString &albumId, const QString &albumName, const QString &description, bool isActivityEnabled, const QString &albumThumbnailAssetId)
 {
     QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/albums/") + albumId);
     QNetworkRequest request = createAuthenticatedRequest(url);
@@ -769,20 +867,22 @@ void ImmichApi::updateAlbum(const QString &albumId, const QString &albumName, co
     QJsonObject json;
     json["albumName"] = albumName;
     json["description"] = description;
+    json["isActivityEnabled"] = isActivityEnabled;
+    if (!albumThumbnailAssetId.isEmpty()) {
+        json["albumThumbnailAssetId"] = albumThumbnailAssetId;
+    }
 
-    QJsonDocument doc(json);
-    QByteArray data = doc.toJson();
-    QBuffer *buffer = new QBuffer();
-    buffer->setData(data);
-    buffer->open(QIODevice::ReadOnly);
+    QBuffer *buffer = createJsonBuffer(json);
 
     QNetworkReply *reply = m_networkManager->sendCustomRequest(request, "PATCH", buffer);
     buffer->setParent(reply);
     QString savedAlbumId = albumId;
     QString savedAlbumName = albumName;
     QString savedDescription = description;
-    connectReply(reply, [this, savedAlbumId, savedAlbumName, savedDescription](const QByteArray &) {
-        emit albumUpdated(savedAlbumId, savedAlbumName, savedDescription);
+    bool savedIsActivityEnabled = isActivityEnabled;
+    QString savedAlbumThumbnailAssetId = albumThumbnailAssetId;
+    connectReply(reply, [this, savedAlbumId, savedAlbumName, savedDescription, savedIsActivityEnabled, savedAlbumThumbnailAssetId](const QByteArray &) {
+        emit albumUpdated(savedAlbumId, savedAlbumName, savedDescription, savedIsActivityEnabled, savedAlbumThumbnailAssetId);
     });
 }
 
@@ -831,5 +931,120 @@ void ImmichApi::fetchTimelineBucket(const QString &timeBucket, bool isFavorite)
     connectReply(reply, [this, originalTimeBucket](const QByteArray &response) {
        QJsonDocument doc = QJsonDocument::fromJson(response);
        emit timelineBucketReceived(originalTimeBucket, doc.object());
+    });
+}
+
+void ImmichApi::setVideoSource(QObject *videoItem, const QString &assetId)
+{
+    if (!videoItem) {
+        qWarning() << "ImmichApi: Value of videoItem is null";
+        return;
+    }
+
+    QMediaPlayer *player = videoItem->findChild<QMediaPlayer*>();
+    if (!player) {
+        qWarning() << "ImmichApi: Could not find QMediaPlayer in video item";
+        return;
+    }
+
+    QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/assets/") + assetId + QStringLiteral("/video/playback"));
+    QNetworkRequest request(url);
+    request.setRawHeader("Authorization", QString("Bearer %1").arg(m_authManager->getAccessToken()).toUtf8());
+
+    qDebug() << "ImmichApi: Setting video source to" << url.toString();
+    player->setMedia(QMediaContent(request));
+}
+
+void ImmichApi::checkExistingAssets(const QStringList &deviceAssetIds)
+{
+    qInfo() << "ImmichApi: Checking" << deviceAssetIds.size() << "assets against server";
+    QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/assets/exist"));
+    QNetworkRequest request = createAuthenticatedRequest(url);
+
+    QJsonObject json;
+    json["deviceAssetIds"] = toJsonStringArray(deviceAssetIds);
+    json["deviceId"] = QStringLiteral("harbour-immich");
+
+    QJsonDocument doc(json);
+    QNetworkReply *reply = m_networkManager->post(request, doc.toJson());
+    connectReply(reply, [this](const QByteArray &response) {
+        QJsonDocument doc = QJsonDocument::fromJson(response);
+        QJsonObject obj = doc.object();
+        QJsonArray existingArray = obj["existingIds"].toArray();
+        QStringList existingIds;
+        for (const QJsonValue &val : existingArray) {
+            existingIds.append(val.toString());
+        }
+        qInfo() << "ImmichApi: Server reports" << existingIds.size() << "existing assets";
+        emit existingAssetsChecked(existingIds);
+    });
+}
+
+void ImmichApi::bulkUploadCheck(const QJsonArray &assets)
+{
+    qInfo() << "ImmichApi: Bulk upload check for" << assets.size() << "assets";
+    QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/assets/bulk-upload-check"));
+    QNetworkRequest request = createAuthenticatedRequest(url);
+
+    QJsonObject json;
+    json["assets"] = assets;
+
+    QJsonDocument doc(json);
+    QNetworkReply *reply = m_networkManager->post(request, doc.toJson());
+    connectReply(reply, [this](const QByteArray &response) {
+        QJsonDocument doc = QJsonDocument::fromJson(response);
+        QJsonObject obj = doc.object();
+        QJsonArray results = obj["results"].toArray();
+        qInfo() << "ImmichApi: Bulk upload check returned" << results.size() << "results";
+        emit bulkUploadCheckCompleted(results);
+    }, 120000); // 120s timeout for bulk operations
+}
+
+void ImmichApi::getStack(const QString &stackId)
+{
+    qInfo() << "ImmichApi: Getting stack:" << stackId;
+    QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/stacks/") + stackId);
+    QNetworkRequest request = createAuthenticatedRequest(url);
+    QNetworkReply *reply = m_networkManager->get(request);
+    QString savedStackId = stackId;
+    connectReply(reply, [this, savedStackId](const QByteArray &response) {
+        QJsonDocument doc = QJsonDocument::fromJson(response);
+        QJsonObject obj = doc.object();
+        QJsonArray assets = obj["assets"].toArray();
+        qInfo() << "ImmichApi: Stack received with" << assets.size() << "assets";
+        emit stackReceived(savedStackId, assets);
+    });
+}
+
+void ImmichApi::createStack(const QStringList &assetIds)
+{
+    qInfo() << "ImmichApi: Creating stack with" << assetIds.size() << "assets";
+    QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/stacks"));
+    QNetworkRequest request = createAuthenticatedRequest(url);
+
+    QJsonObject json;
+    json["assetIds"] = toJsonStringArray(assetIds);
+
+    QJsonDocument doc(json);
+    QNetworkReply *reply = m_networkManager->post(request, doc.toJson());
+    connectReply(reply, [this](const QByteArray &response) {
+        QJsonDocument doc = QJsonDocument::fromJson(response);
+        QJsonObject obj = doc.object();
+        QString stackId = obj["id"].toString();
+        qInfo() << "ImmichApi: Stack created:" << stackId;
+        emit stackCreated(stackId);
+    });
+}
+
+void ImmichApi::deleteStack(const QString &stackId)
+{
+    qInfo() << "ImmichApi: Deleting stack:" << stackId;
+    QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/stacks/") + stackId);
+    QNetworkRequest request = createAuthenticatedRequest(url);
+    QNetworkReply *reply = m_networkManager->deleteResource(request);
+    QString savedStackId = stackId;
+    connectReply(reply, [this, savedStackId](const QByteArray &) {
+        qInfo() << "ImmichApi: Stack deleted:" << savedStackId;
+        emit stackDeleted(savedStackId);
     });
 }

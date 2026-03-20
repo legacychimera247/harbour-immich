@@ -14,6 +14,7 @@ class AuthManager : public QObject
     Q_PROPERTY(bool isAuthenticated READ isAuthenticated NOTIFY isAuthenticatedChanged)
     Q_PROPERTY(QString serverUrl READ serverUrl WRITE setServerUrl NOTIFY serverUrlChanged)
     Q_PROPERTY(QString email READ email NOTIFY emailChanged)
+    Q_PROPERTY(QString userId READ userId NOTIFY userIdChanged)
     Q_PROPERTY(QString storedPassword READ storedPassword NOTIFY storedPasswordChanged)
 
 public:
@@ -23,6 +24,7 @@ public:
     QString serverUrl() const;
     void setServerUrl(const QString &url);
     QString email() const;
+    QString userId() const;
     QString storedPassword() const;
 
     Q_INVOKABLE void login(const QString &email, const QString &password);
@@ -37,6 +39,7 @@ signals:
     void isAuthenticatedChanged();
     void serverUrlChanged();
     void emailChanged();
+    void userIdChanged();
     void storedPasswordChanged();
     void loginSucceeded();
     void loginFailed(const QString &error);
@@ -45,17 +48,21 @@ signals:
 private slots:
     void onLoginReplyFinished();
     void onValidateTokenReplyFinished();
+    void onUserMeReplyFinished();
 
 private:
     QNetworkAccessManager *m_networkManager;
     SecureStorage *m_storage;
     QString m_serverUrl;
     QString m_email;
+    QString m_userId;
     QString m_accessToken;
     bool m_isAuthenticated;
 
     void setAuthenticated(bool authenticated);
     void setEmail(const QString &email);
+    void setUserId(const QString &userId);
+    void fetchCurrentUser();
 };
 
 #endif

@@ -1,4 +1,7 @@
 #include "settingsmanager.h"
+#include <QStandardPaths>
+#include <QDir>
+#include <QDateTime>
 
 SettingsManager::SettingsManager(QObject *parent)
     : QObject(parent)
@@ -33,7 +36,7 @@ void SettingsManager::setAssetsPerRow(int count)
 
 int SettingsManager::memoriesThumbnailSize() const
 {
-    return m_settings.value("memoriesThumbnailSize", 2).toInt();
+    return m_settings.value("memoriesThumbnailSize", 1).toInt();
 }
 
 void SettingsManager::setMemoriesThumbnailSize(int size)
@@ -67,5 +70,31 @@ void SettingsManager::setScrollToTopPosition(const QString &position)
     if (scrollToTopPosition() != position) {
         m_settings.setValue("scrollToTopPosition", position);
         emit scrollToTopPositionChanged();
+    }
+}
+
+bool SettingsManager::coverShowAssets() const
+{
+    return m_settings.value("cover/showAssets", false).toBool();
+}
+
+void SettingsManager::setCoverShowAssets(bool show)
+{
+    if (coverShowAssets() != show) {
+        m_settings.setValue("cover/showAssets", show);
+        emit coverShowAssetsChanged();
+    }
+}
+
+bool SettingsManager::coverSlideshow() const
+{
+    return m_settings.value("cover/slideshow", false).toBool();
+}
+
+void SettingsManager::setCoverSlideshow(bool enabled)
+{
+    if (coverSlideshow() != enabled) {
+        m_settings.setValue("cover/slideshow", enabled);
+        emit coverSlideshowChanged();
     }
 }

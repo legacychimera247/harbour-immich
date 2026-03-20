@@ -5,7 +5,7 @@ Dialog {
    id: pickerDialog
 
    property string title: ""
-   property var model: []  // Array of {displayValue: string, actualValue: string}
+   property var model: []
    property int selectedIndex: -1
    property string selectedValue: ""
    property string selectedDisplayValue: ""

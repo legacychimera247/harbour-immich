@@ -2,177 +2,275 @@ import QtQuick 2.0
 import Sailfish.Silica 1.0
 import QtFeedback 5.0
 
-ListItem {
-   id: actionBar
-   width: parent.width
-   contentHeight: Theme.itemSizeLarge
-   _backgroundColor: "transparent"
-   menu: moreMenu
+Item {
+    id: actionBar
+    width: parent.width
+    height: contentHeight + menuContainer.height
+    visible: shown || slideTransform.y < contentHeight
+    transform: Translate {
+        id: slideTransform
+        y: shown ? 0 : contentHeight
+        Behavior on y { NumberAnimation { duration: 200; easing.type: Easing.OutQuad } }
+    }
 
-   property int selectedCount: 0
-   property bool hasAnyFavorites: false
-   property bool allAreFavorites: false
+    property real contentHeight: Theme.itemSizeLarge
+    property int selectedCount: 0
+    property bool shown: selectedCount > 0
+    property bool hasAnyFavorites: false
+    property bool allAreFavorites: false
+    property bool canStack: false
+    property string activeMenuType: ""
 
-   signal addToFavorites()
-   signal removeFromFavorites()
-   signal share()
-   signal addToAlbum()
-   signal clearSelection()
-   signal download()
-   signal deleteSelected()
+    signal addToFavorites()
+    signal removeFromFavorites()
+    signal share()
+    signal addToAlbum()
+    signal stackSelected()
+    signal clearSelection()
+    signal download()
+    signal deleteSelected()
 
-   ThemeEffect {
-       id: actionFeedback
-       effect: ThemeEffect.Press
-   }
+    function showContextMenu(menuType) {
+        if (activeMenuType === menuType) {
+            activeMenuType = ""
+        } else {
+            activeMenuType = menuType
+        }
+    }
 
-   Rectangle {
-       anchors.left: parent.left
-       anchors.right: parent.right
-       anchors.bottom: parent.bottom
-       height: actionBar.contentHeight
-       color: Theme.rgba(Theme.highlightDimmerColor, 0.95)
+    onShownChanged: {
+        if (!shown) activeMenuType = ""
+    }
 
-       // Top border
-       Rectangle {
-           anchors.top: parent.top
-           anchors.left: parent.left
-           anchors.right: parent.right
-           height: 1
-           color: Theme.rgba(Theme.highlightColor, 0.3)
-       }
-   }
+    ThemeEffect {
+        id: actionFeedback
+        effect: ThemeEffect.Press
+    }
 
-   Row {
-       anchors.left: parent.left
-       anchors.right: parent.right
-       anchors.bottom: parent.bottom
-       height: actionBar.contentHeight
-       anchors.leftMargin: Theme.horizontalPageMargin
-       anchors.rightMargin: Theme.horizontalPageMargin
+    // Dim background
+    Rectangle {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.top
+        height: Screen.height
+        color: Theme.rgba("black", 0.4)
 
-       // Favorite toggle
-       IconButton {
-           width: parent.width / 4
-           height: parent.height
-           icon.source: allAreFavorites ? "image://theme/icon-m-favorite-selected" : "image://theme/icon-m-favorite"
-           onClicked: {
-               actionFeedback.play()
-               if (allAreFavorites) {
-                   removeFromFavorites()
-               } else {
-                   addToFavorites()
-               }
-           }
+        opacity: activeMenuType !== "" ? 1.0 : 0.0
+        visible: opacity > 0
 
-           Label {
-               anchors.bottom: parent.bottom
-               anchors.bottomMargin: Theme.paddingSmall
-               anchors.horizontalCenter: parent.horizontalCenter
-               text: allAreFavorites
-                    //% "Unfav"
-                    ? qsTrId("selectionActionBar.unfav")
-                    //% "Favorite"
-                    : qsTrId("selectionActionBar.favorite")
-               font.pixelSize: Theme.fontSizeTiny
-               color: Theme.secondaryColor
-           }
-       }
+        Behavior on opacity { NumberAnimation { duration: 150 } }
 
-       // Share
-       IconButton {
-           width: parent.width / 4
-           height: parent.height
-           icon.source: "image://theme/icon-m-share"
-           onClicked: {
-               actionFeedback.play()
-               share()
-           }
+        MouseArea {
+            anchors.fill: parent
+            onClicked: activeMenuType = ""
+        }
+    }
 
-           Label {
-               anchors.bottom: parent.bottom
-               anchors.bottomMargin: Theme.paddingSmall
-               anchors.horizontalCenter: parent.horizontalCenter
-               //% "Share"
-               text: qsTrId("selectionActionBar.share")
-               font.pixelSize: Theme.fontSizeTiny
-               color: Theme.secondaryColor
-           }
-       }
+    // Bar background
+    Rectangle {
+        id: barBackground
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: contentHeight
+        color: Theme.rgba(Theme.highlightDimmerColor, 0.95)
+        z: 2
 
-       // Add to album
-       IconButton {
-           width: parent.width / 4
-           height: parent.height
-           icon.source: "image://theme/icon-m-add"
-           onClicked: {
-               actionFeedback.play()
-               addToAlbum()
-           }
+        Rectangle {
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: 1
+            color: Theme.rgba(Theme.highlightColor, 0.3)
+        }
+    }
 
-           Label {
-               anchors.bottom: parent.bottom
-               anchors.bottomMargin: Theme.paddingSmall
-               anchors.horizontalCenter: parent.horizontalCenter
-               //% "Album"
-               text: qsTrId("selectionActionBar.album")
-               font.pixelSize: Theme.fontSizeTiny
-               color: Theme.secondaryColor
-           }
-       }
+    // Selection label
+    Label {
+        anchors.top: parent.top
+        anchors.topMargin: Theme.paddingSmall
+        anchors.horizontalCenter: parent.horizontalCenter
+        //% "%1 selected"
+        text: qsTrId("selectionActionBar.selected").arg(selectedCount)
+        font.pixelSize: Theme.fontSizeExtraSmall
+        color: Theme.highlightColor
+        visible: selectedCount > 0
+        z: 3
+    }
 
-       // More menu
-       IconButton {
-           id: moreButton
-           width: parent.width / 4
-           height: parent.height
-           icon.source: "image://theme/icon-m-other"
-           onClicked: actionBar.openMenu()
+    // Buttons
+    Row {
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: contentHeight
+        anchors.leftMargin: Theme.horizontalPageMargin
+        anchors.rightMargin: Theme.horizontalPageMargin
+        z: 3
 
-           Label {
-               anchors.bottom: parent.bottom
-               anchors.bottomMargin: Theme.paddingSmall
-               anchors.horizontalCenter: parent.horizontalCenter
-               //% "More"
-               text: qsTrId("selectionActionBar.more")
-               font.pixelSize: Theme.fontSizeTiny
-               color: Theme.secondaryColor
-           }
-       }
-   }
+        IconButton {
+            width: parent.width / 4
+            height: parent.height
+            icon.source: allAreFavorites ? "image://theme/icon-m-favorite-selected" : "image://theme/icon-m-favorite"
 
-   Component {
-       id: moreMenu
+            onClicked: {
+                actionFeedback.play()
+                if (allAreFavorites) {
+                    removeFromFavorites()
+                } else {
+                    addToFavorites()
+                }
+            }
+        }
 
-       ContextMenu {
-           MenuItem {
-               //% "Clear selection"
-               text: qsTrId("selectionActionBar.clear")
-               onClicked: clearSelection()
-           }
+        IconButton {
+            width: parent.width / 4
+            height: parent.height
+            icon.source: "image://theme/icon-m-share"
 
-           MenuItem {
-               //% "Download"
-               text: qsTrId("selectionActionBar.download")
-               onClicked: download()
-           }
+            onClicked: {
+                actionFeedback.play()
+                share()
+            }
+        }
 
-           MenuItem {
-               //% "Delete"
-               text: qsTrId("selectionActionBar.delete")
-               onClicked: deleteSelected()
-           }
-       }
-   }
+        IconButton {
+            width: parent.width / 4
+            height: parent.height
+            icon.source: "image://theme/icon-m-add?" + (activeMenuType === "add" ? Theme.highlightColor : Theme.primaryColor)
 
-   // Selection counter
-   Label {
-       anchors.bottom: parent.bottom
-       anchors.bottomMargin: actionBar.contentHeight - Theme.paddingSmall - height
-       anchors.horizontalCenter: parent.horizontalCenter
-       //% "%1 selected"
-       text: qsTrId("selectionActionBar.selected").arg(selectedCount)
-       font.pixelSize: Theme.fontSizeExtraSmall
-       color: Theme.highlightColor
-   }
+            onClicked: {
+                actionFeedback.play()
+                showContextMenu("add")
+            }
+        }
+
+        IconButton {
+            width: parent.width / 4
+            height: parent.height
+            icon.source: "image://theme/icon-m-other?" + (activeMenuType === "more" ? Theme.highlightColor : Theme.primaryColor)
+
+            onClicked: {
+                actionFeedback.play()
+                showContextMenu("more")
+            }
+        }
+    }
+
+    Item {
+        id: menuContainer
+        anchors.top: barBackground.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: visibleMenu ? menuColumn.implicitHeight : 0
+        clip: true
+        z: 2
+
+        property bool visibleMenu: activeMenuType !== ""
+
+        Behavior on height {
+            NumberAnimation { duration: 150; easing.type: Easing.OutQuad }
+        }
+
+        Column {
+            id: menuColumn
+            anchors.left: parent.left
+            anchors.right: parent.right
+
+            BackgroundItem {
+                width: parent.width
+                height: Theme.itemSizeSmall
+                visible: activeMenuType === "add"
+                highlightedColor: Theme.rgba(Theme.highlightBackgroundColor, Theme.highlightBackgroundOpacity)
+
+                Label {
+                    anchors.centerIn: parent
+                    //% "Add to album"
+                    text: qsTrId("selectionActionBar.addToAlbum")
+                    color: parent.highlighted ? Theme.highlightColor : Theme.primaryColor
+                }
+
+                onClicked: {
+                    activeMenuType = ""
+                    addToAlbum()
+                }
+            }
+
+            BackgroundItem {
+                width: parent.width
+                height: Theme.itemSizeSmall
+                visible: activeMenuType === "add" && canStack
+                highlightedColor: Theme.rgba(Theme.highlightBackgroundColor, Theme.highlightBackgroundOpacity)
+
+                Label {
+                    anchors.centerIn: parent
+                    //% "Stack"
+                    text: qsTrId("selectionActionBar.stack")
+                    color: parent.highlighted ? Theme.highlightColor : Theme.primaryColor
+                }
+
+                onClicked: {
+                    activeMenuType = ""
+                    stackSelected()
+                }
+            }
+
+            BackgroundItem {
+                width: parent.width
+                height: Theme.itemSizeSmall
+                visible: activeMenuType === "more"
+                highlightedColor: Theme.rgba(Theme.highlightBackgroundColor, Theme.highlightBackgroundOpacity)
+
+                Label {
+                    anchors.centerIn: parent
+                    //% "Clear selection"
+                    text: qsTrId("selectionActionBar.clear")
+                    color: parent.highlighted ? Theme.highlightColor : Theme.primaryColor
+                }
+
+                onClicked: {
+                    activeMenuType = ""
+                    clearSelection()
+                }
+            }
+
+            BackgroundItem {
+                width: parent.width
+                height: Theme.itemSizeSmall
+                visible: activeMenuType === "more"
+                highlightedColor: Theme.rgba(Theme.highlightBackgroundColor, Theme.highlightBackgroundOpacity)
+
+                Label {
+                    anchors.centerIn: parent
+                    //% "Download"
+                    text: qsTrId("selectionActionBar.download")
+                    color: parent.highlighted ? Theme.highlightColor : Theme.primaryColor
+                }
+
+                onClicked: {
+                    activeMenuType = ""
+                    download()
+                }
+            }
+
+            BackgroundItem {
+                width: parent.width
+                height: Theme.itemSizeSmall
+                visible: activeMenuType === "more"
+                highlightedColor: Theme.rgba(Theme.highlightBackgroundColor, Theme.highlightBackgroundOpacity)
+
+                Label {
+                    anchors.centerIn: parent
+                    //% "Delete"
+                    text: qsTrId("selectionActionBar.delete")
+                    color: parent.highlighted ? Theme.highlightColor : Theme.primaryColor
+                }
+
+                onClicked: {
+                    activeMenuType = ""
+                    deleteSelected()
+                }
+            }
+        }
+    }
 }

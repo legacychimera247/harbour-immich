@@ -17,249 +17,68 @@ Page {
     property var assetInfo: null
     property int currentIndex: -1
     property var albumAssets: null
+    property string albumId: ""
     property int totalAssets: albumAssets ? albumAssets.length : timelineModel.totalCount
     property string thumbhash: ""
     property string currentThumbhash: assetInfo && assetInfo.thumbhash ? assetInfo.thumbhash : thumbhash
+    property int pendingNavigationIndex: -1
 
-    allowedOrientations: Orientation.All
+    // Zoom + pan state
+    property real imageScale: 1.0
+    property real panX: 0
+    property real panY: 0
+    property bool zoomed: imageScale > 1.05
 
-    SilicaFlickable {
-        anchors.fill: parent
-        contentHeight: column.height
+    // Horizontal slide state (for prev/next peek)
+    property real slideOffset: 0
 
-        PullDownMenu {
-            MenuItem {
-                //% "Information"
-                text: qsTrId("assetDetailPage.information")
-                onClicked: {
-                    pageStack.push(Qt.resolvedUrl("AssetInfoPage.qml"), {
-                        assetId: assetId,
-                        assetInfo: assetInfo
-                    })
-                }
-            }
+    // Vertical drag-to-dismiss state
+    property real dragOffsetY: 0
+    property bool draggingVertical: false
+    property real dismissThreshold: page.height * 0.2
+    property real dragOpacity: draggingVertical ? Math.max(0.2, 1.0 - Math.abs(dragOffsetY) / (page.height * 0.5)) : 1.0
 
-            MenuItem {
-                //% "Show similar assets"
-                text: qsTrId("assetDetailPage.showSimilar")
-                onClicked: {
-                    pageStack.push(Qt.resolvedUrl("SearchResultsPage.qml"), {
-                        smartSearchAssetId: assetId
-                    })
-                }
-            }
-
-            MenuItem {
-                //% "Show in timeline"
-                text: qsTrId("assetDetailPage.showInTimeline")
-                onClicked: {
-                    var assetDate = ""
-                    if (assetInfo) {
-                        assetDate = assetInfo.localDateTime || assetInfo.fileCreatedAt || ""
-                    }
-                    pageStack.pop(pageStack.find(function(p) {
-                        return p.objectName === "timelinePage"
-                    }))
-                    timelineModel.scrollToAsset(assetId, assetDate)
-                }
-            }
-
-            MenuItem {
-                //% "Share"
-                text: qsTrId("assetDetailPage.share")
-                onClicked: {
-                    pageStack.push(Qt.resolvedUrl("SharePage.qml"), {
-                        shareType: "INDIVIDUAL",
-                        assetIds: [assetId]
-                    })
-                }
-            }
-
-            MenuItem {
-                //% "Download"
-                text: qsTrId("assetDetailPage.download")
-                onClicked: {
-                    immichApi.downloadAsset(assetId)
-                    //% "Downloading..."
-                    notification.show(qsTrId("assetDetailPage.downloading"))
-                }
-            }
-
-            MenuItem {
-                text: isFavorite
-                      //% "Remove from favorites"
-                      ? qsTrId("assetDetailPage.removeFromFavorites")
-                      //% "Add to favorites"
-                      : qsTrId("assetDetailPage.addToFavorites")
-                onClicked: {
-                    immichApi.toggleFavorite([assetId], !isFavorite)
-                }
-            }
-        }
-
-        Column {
-            id: column
-            width: page.width
-
-            Item {
-                width: parent.width
-                height: page.height
-
-                Image {
-                    id: thumbhashPlaceholder
-                    anchors.fill: parent
-                    fillMode: Image.PreserveAspectFit
-                    source: currentThumbhash ? "image://thumbhash/" + currentThumbhash : ""
-                    visible: assetImage.status !== Image.Ready
-                    asynchronous: false
-                    smooth: true
-                    cache: true
-                }
-
-                Image {
-                    id: assetImage
-                    anchors.fill: parent
-                    fillMode: Image.PreserveAspectFit
-                    source: assetId ? "image://immich/detail/" + assetId : ""
-                    asynchronous: true
-                    smooth: true
-
-                    BusyIndicator {
-                        anchors.centerIn: parent
-                        running: assetImage.status === Image.Loading && !currentThumbhash
-                        size: BusyIndicatorSize.Large
-                    }
-
-                    Label {
-                        anchors.centerIn: parent
-                        visible: assetImage.status === Image.Error
-                        //% "Failed to load image"
-                        text: qsTrId("assetDetailPage.failed")
-                        color: Theme.secondaryColor
-                    }
-                }
-            }
-
-            // Preload adjacent assets for faster navigation
-            Image {
-                id: preloadPrev
-                visible: false
-                width: 1
-                height: 1
-                asynchronous: true
-                cache: true
-                source: {
-                    if (currentIndex > 0) {
-                        var prevAsset = albumAssets ? albumAssets[currentIndex - 1] : timelineModel.getAssetByAssetIndex(currentIndex - 1)
-                        return prevAsset && prevAsset.id ? "image://immich/detail/" + prevAsset.id : ""
-                    }
-                    return ""
-                }
-            }
-
-            Image {
-                id: preloadNext
-                visible: false
-                width: 1
-                height: 1
-                asynchronous: true
-                cache: true
-                source: {
-                    if (currentIndex >= 0 && currentIndex < totalAssets - 1) {
-                        var nextAsset = albumAssets ? albumAssets[currentIndex + 1] : timelineModel.getAssetByAssetIndex(currentIndex + 1)
-                        return nextAsset && nextAsset.id ? "image://immich/detail/" + nextAsset.id : ""
-                    }
-                    return ""
-                }
-            }
-
-            Item {
-                width: parent.width
-                height: Theme.paddingLarge
-            }
-        }
-
-        PinchArea {
-            anchors.fill: parent
-            pinch.target: assetImage
-            pinch.minimumScale: 1
-            pinch.maximumScale: 4
-            
-            onPinchFinished: {
-                if (assetImage.scale < 1.1) {
-                    assetImage.scale = 1
-                    assetImage.x = 0
-                    assetImage.y = 0
-                }
-            }
-            
-            MouseArea {
-                anchors.fill: parent
-                
-                onDoubleClicked: {
-                    if (assetImage.scale > 1.1) {
-                        assetImage.scale = 1
-                        assetImage.x = 0
-                        assetImage.y = 0
-                    } else {
-                        assetImage.scale = 2
-                    }
-                }
-            }
-        }
-
-        // Navigation buttons
-        IconButton {
-            anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.leftMargin: Theme.horizontalPageMargin
-            icon.source: "image://theme/icon-m-left"
-            visible: currentIndex > 0 && assetImage.scale <= 1.1
-            opacity: 0.8
-            onClicked: navigateToAsset(currentIndex - 1)
-
-            Rectangle {
-                anchors.centerIn: parent
-                width: parent.width
-                height: parent.height
-                radius: width / 2
-                color: Theme.rgba(Theme.highlightDimmerColor, 0.5)
-                z: -1
-            }
-        }
-
-        IconButton {
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.rightMargin: Theme.horizontalPageMargin
-            icon.source: "image://theme/icon-m-right"
-            visible: currentIndex < totalAssets - 1 && currentIndex >= 0 && assetImage.scale <= 1.1
-            opacity: 0.8
-            onClicked: navigateToAsset(currentIndex + 1)
-
-            Rectangle {
-                anchors.centerIn: parent
-                width: parent.width
-                height: parent.height
-                radius: width / 2
-                color: Theme.rgba(Theme.highlightDimmerColor, 0.5)
-                z: -1
-            }
-        }
+    function getAssetSource(index) {
+        if (index < 0 || index >= totalAssets) return ""
+        var asset = albumAssets ? albumAssets[index] : timelineModel.getAssetByAssetIndex(index)
+        return asset && asset.id ? "image://immich/detail/" + asset.id : ""
     }
 
     function navigateToAsset(assetIndex) {
         if (assetIndex < 0 || assetIndex >= totalAssets) return
-        
+
+        imageScale = 1.0
+        panX = 0
+        panY = 0
+
         var asset = albumAssets ? albumAssets[assetIndex] : timelineModel.getAssetByAssetIndex(assetIndex)
+        if (!albumAssets && (!asset || !asset.id)) {
+            var location = timelineModel.getAssetLocation(assetIndex)
+            if (location && location.bucketIndex !== undefined && location.bucketIndex >= 0) {
+                pendingNavigationIndex = assetIndex
+                timelineModel.requestBucketLoad(location.bucketIndex)
+            }
+            return
+        }
         if (asset && asset.id) {
-            assetImage.source = ""
+            // If timeline asset is a stack, replace with stack detail
+            if (!albumAssets && asset.stackId && asset.stackId !== "") {
+                pageStack.replace(Qt.resolvedUrl("StackDetailPage.qml"), {
+                    "stackId": asset.stackId,
+                    "primaryAssetId": asset.id,
+                    "primaryIsFavorite": asset.isFavorite || false,
+                    "primaryThumbhash": asset.thumbhash || "",
+                    "timelineAssetIndex": assetIndex
+                }, PageStackAction.Immediate)
+                return
+            }
+
             assetId = asset.id
             isFavorite = asset.isFavorite || false
             isVideo = asset.isVideo || false
             thumbhash = asset.thumbhash || ""
             currentIndex = assetIndex
-            
+
             if (isVideo) {
                 pageStack.replace(Qt.resolvedUrl("VideoPlayerPage.qml"), {
                     videoId: assetId,
@@ -273,6 +92,320 @@ Page {
             }
         } else {
             console.warn("AssetDetailPage: Invalid asset data at index", assetIndex)
+        }
+    }
+
+    allowedOrientations: Orientation.All
+    backNavigation: false
+    backgroundColor: "transparent"
+
+    // Semi-transparent backdrop that fades during drag
+    DismissDragBackdrop {
+        anchors.fill: parent
+        dragOpacity: page.dragOpacity
+        dragOffsetY: page.dragOffsetY
+        draggingVertical: page.draggingVertical
+        dismissThreshold: page.dismissThreshold
+        //% "Release to close"
+        releaseText: qsTrId("assetDetailPage.releaseToClose")
+        //% "Drag to close"
+        dragText: qsTrId("assetDetailPage.dragToClose")
+        z: -1
+    }
+
+    // Main content container - moves vertically during drag-to-dismiss
+    Item {
+        id: contentContainer
+        anchors.fill: parent
+        opacity: dragOpacity
+        transform: Translate { y: dragOffsetY }
+
+        // Image viewport with prev/current/next for horizontal peek
+        Item {
+            id: imageViewport
+            anchors.fill: parent
+            clip: true
+
+            // Previous asset (left of current)
+            Image {
+                id: prevImage
+                x: -imageViewport.width + slideOffset
+                width: imageViewport.width
+                height: imageViewport.height
+                fillMode: Image.PreserveAspectFit
+                source: getAssetSource(currentIndex - 1)
+                asynchronous: true
+                cache: true
+            }
+
+            // Thumbhash placeholder for current asset
+            Image {
+                id: thumbhashPlaceholder
+                x: zoomed ? 0 : slideOffset
+                width: imageViewport.width
+                height: imageViewport.height
+                fillMode: Image.PreserveAspectFit
+                source: currentThumbhash ? "image://thumbhash/" + currentThumbhash : ""
+                visible: assetImage.status !== Image.Ready && !zoomed
+                asynchronous: false
+                smooth: true
+                cache: true
+            }
+
+            // Current asset image
+            Image {
+                id: assetImage
+                x: zoomed ? 0 : slideOffset
+                width: imageViewport.width
+                height: imageViewport.height
+                fillMode: Image.PreserveAspectFit
+                source: assetId ? "image://immich/detail/" + assetId : ""
+                asynchronous: true
+                smooth: true
+                scale: imageScale
+                transformOrigin: Item.Center
+
+                onStatusChanged:  {
+                    if (status === Image.Ready && transitionCover.visible) {
+                        transitionCover.visible = false
+                        transitionCover.source = ""
+                    }
+                }
+
+                transform: Translate {
+                    x: panX
+                    y: panY
+                }
+
+                BusyIndicator {
+                    anchors.centerIn: parent
+                    running: assetImage.status === Image.Loading && !currentThumbhash
+                    size: BusyIndicatorSize.Large
+                }
+
+                Label {
+                    anchors.centerIn: parent
+                    visible: assetImage.status === Image.Error
+                    //% "Failed to load image"
+                    text: qsTrId("assetDetailPage.failed")
+                    color: Theme.secondaryColor
+                }
+            }
+
+            // Next asset (right of current)
+            Image {
+                id: nextImage
+                x: imageViewport.width + slideOffset
+                width: imageViewport.width
+                height: imageViewport.height
+                fillMode: Image.PreserveAspectFit
+                source: getAssetSource(currentIndex + 1)
+                asynchronous: true
+                cache: true
+            }
+
+            // Transition cover to prevent flash during asset switch
+            Image {
+                id: transitionCover
+                width: imageViewport.width
+                height: imageViewport.height
+                fillMode: Image.PreserveAspectFit
+                visible: false
+                asynchronous: false
+                cache: true
+                z: 2
+            }
+        }
+
+        ZoomSwipeArea {
+            anchors.fill: parent
+            z: 1
+            stateTarget: page
+            imageTarget: assetImage
+            viewportWidth: page.width
+            viewportHeight: page.height
+            currentIndex: page.currentIndex
+            totalCount: page.totalAssets
+            onPrevRequested: {
+                transitionCover.source = prevImage.source
+                transitionCover.visible = true
+                page.navigateToAsset(page.currentIndex - 1)
+            }
+            onNextRequested: {
+                transitionCover.source = nextImage.source
+                transitionCover.visible = true
+                page.navigateToAsset(page.currentIndex + 1)
+            }
+            onDismissRequested: pageStack.pop()
+        }
+
+        // Info button (top-left)
+        IconButton {
+            id: infoButton
+            anchors {
+                top: parent.top
+                left: parent.left
+                topMargin: Theme.paddingLarge
+                leftMargin: Theme.horizontalPageMargin
+            }
+            icon.source: "image://theme/icon-m-about"
+            visible: !zoomed && !draggingVertical
+            opacity: visible ? 1.0 : 0.0
+            Behavior on opacity { FadeAnimation { duration: 150 } }
+            onClicked: {
+                pageStack.push(Qt.resolvedUrl("AssetInfoPage.qml"), {
+                    assetId: assetId,
+                    assetInfo: assetInfo
+                })
+            }
+            z: 10
+        }
+
+        // Back button (top-right)
+        IconButton {
+            id: backButton
+            anchors {
+                top: parent.top
+                right: parent.right
+                topMargin: Theme.paddingLarge
+                rightMargin: Theme.horizontalPageMargin
+            }
+            icon.source: "image://theme/icon-m-reset"
+            visible: !zoomed && !draggingVertical
+            opacity: visible ? 1.0 : 0.0
+            Behavior on opacity { FadeAnimation { duration: 150 } }
+            onClicked: pageStack.pop()
+            z: 10
+        }
+
+        // Bottom action bar
+        Rectangle {
+            id: actionBar
+            anchors {
+                bottom: parent.bottom
+                left: parent.left
+                right: parent.right
+            }
+            height: actionRow.height + Theme.paddingMedium * 2
+            color: Theme.rgba("black", 0.6)
+            visible: !zoomed && !draggingVertical
+            opacity: visible ? 1.0 : 0.0
+            Behavior on opacity { FadeAnimation { duration: 150 } }
+            z: 10
+
+            // Gradient top edge
+            Rectangle {
+                anchors.bottom: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: Theme.paddingLarge * 2
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: "transparent" }
+                    GradientStop { position: 1.0; color: Theme.rgba("black", 0.6) }
+                }
+            }
+
+            Row {
+                id: actionRow
+                anchors.centerIn: parent
+                width: parent.width
+
+                property int buttonCount: albumId ? 6 : 5
+
+                IconButton {
+                    width: parent.width / actionRow.buttonCount
+                    icon.source: isFavorite ? "image://theme/icon-m-favorite-selected" : "image://theme/icon-m-favorite"
+                    onClicked: {
+                        hapticFeedback.play()
+                        immichApi.toggleFavorite([assetId], !isFavorite)
+                    }
+                }
+
+                IconButton {
+                    width: parent.width / actionRow.buttonCount
+                    icon.source: "image://theme/icon-m-cloud-download"
+                    onClicked: {
+                        hapticFeedback.play()
+                        immichApi.downloadAsset(assetId)
+                        //% "Downloading..."
+                        notification.show(qsTrId("assetDetailPage.downloading"))
+                    }
+                }
+
+                IconButton {
+                    width: parent.width / actionRow.buttonCount
+                    icon.source: "image://theme/icon-m-share"
+                    onClicked: {
+                        pageStack.push(Qt.resolvedUrl("SharePage.qml"), {
+                            shareType: "INDIVIDUAL",
+                            assetIds: [assetId]
+                        })
+                    }
+                }
+
+                IconButton {
+                    width: parent.width / actionRow.buttonCount
+                    icon.source: "image://theme/icon-m-search"
+                    onClicked: {
+                        pageStack.push(Qt.resolvedUrl("SearchResultsPage.qml"), {
+                            smartSearchAssetId: assetId
+                        })
+                    }
+                }
+
+                IconButton {
+                    width: parent.width / actionRow.buttonCount
+                    icon.source: "image://theme/icon-m-whereami"
+                    onClicked: {
+                        var assetDate = ""
+                        if (assetInfo) {
+                            assetDate = assetInfo.localDateTime || assetInfo.fileCreatedAt || ""
+                        }
+                        pageStack.pop(pageStack.find(function(p) {
+                            return p.objectName === "timelinePage"
+                        }))
+                        timelineModel.scrollToAsset(assetId, assetDate)
+                    }
+                }
+
+                IconButton {
+                    width: parent.width / actionRow.buttonCount
+                    visible: albumId !== ""
+                    icon.source: "image://theme/icon-m-delete"
+                    onClicked: {
+                        hapticFeedback.play()
+                        //% "Removing from album"
+                        removeRemorse.execute(qsTrId("assetDetailPage.removingFromAlbum"), function() {
+                            immichApi.removeAssetsFromAlbum(albumId, [assetId])
+                        })
+                    }
+                }
+            }
+        }
+
+        NotificationBanner {
+            id: notification
+            anchors.bottom: actionBar.top
+            z: 10
+        }
+    }
+
+    RemorsePopup {
+        id: removeRemorse
+    }
+
+    Connections {
+        target: albumAssets ? null : timelineModel
+        onBucketAssetsLoaded: {
+            if (page.pendingNavigationIndex < 0) {
+                return
+            }
+            var location = timelineModel.getAssetLocation(page.pendingNavigationIndex)
+            if (location && location.bucketIndex === bucketIndex) {
+                var targetIndex = page.pendingNavigationIndex
+                page.pendingNavigationIndex = -1
+                page.navigateToAsset(targetIndex)
+            }
         }
     }
 
@@ -312,10 +445,10 @@ Page {
                 notification.show(qsTrId("assetDetailPage.downloaded").arg(filePath))
             }
         }
-    }
-
-    NotificationBanner {
-        id: notification
-        anchors.bottom: parent.bottom
+        onAssetsRemovedFromAlbum: {
+            if (albumId === page.albumId) {
+                pageStack.pop()
+            }
+        }
     }
 }

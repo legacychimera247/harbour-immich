@@ -15,33 +15,26 @@ Page {
            MenuItem {
                //% "Edit album"
                text: qsTrId("albumInfoPage.editAlbum")
+               visible: !!(albumInfo && albumInfo.owner && albumInfo.owner.id === authManager.userId)
                onClicked: {
                    pageStack.push(Qt.resolvedUrl("EditAlbumDialog.qml"), {
                        albumId: page.albumId,
                        albumName: albumInfo ? albumInfo.albumName : "",
-                       albumDescription: albumInfo && albumInfo.description ? albumInfo.description : ""
+                       albumDescription: albumInfo && albumInfo.description ? albumInfo.description : "",
+                       isActivityEnabled: albumInfo && albumInfo.isActivityEnabled !== undefined ? albumInfo.isActivityEnabled : true,
+                       albumThumbnailAssetId: albumInfo && albumInfo.albumThumbnailAssetId ? albumInfo.albumThumbnailAssetId : "",
+                       albumAssets: albumInfo && albumInfo.assets ? albumInfo.assets : []
                    })
                }
            }
 
            MenuItem {
-               //% "Add users"
-               text: qsTrId("albumInfoPage.addUsers")
+               //% "Edit users"
+               text: qsTrId("albumInfoPage.editUsers")
                onClicked: {
-                   var existingIds = []
-                   if (albumInfo && albumInfo.albumUsers) {
-                       for (var i = 0; i < albumInfo.albumUsers.length; i++) {
-                           var u = albumInfo.albumUsers[i].user
-                           if (u && u.id) existingIds.push(u.id)
-                       }
-                   }
-                   // Exclude owner
-                   if (albumInfo && albumInfo.owner && albumInfo.owner.id) {
-                       existingIds.push(albumInfo.owner.id)
-                   }
-                   pageStack.push(Qt.resolvedUrl("UserPickerPage.qml"), {
+                   pageStack.push(Qt.resolvedUrl("EditAlbumUsersDialog.qml"), {
                        albumId: page.albumId,
-                       existingUserIds: existingIds
+                       albumInfo: page.albumInfo
                    })
                }
            }
@@ -97,7 +90,7 @@ Page {
            SectionHeader {
                //% "Shared with"
                text: qsTrId("albumInfoPage.sharedWith")
-               visible: albumInfo && albumInfo.albumUsers && albumInfo.albumUsers.length > 0
+               visible: !!(albumInfo && albumInfo.albumUsers && albumInfo.albumUsers.length > 0)
            }
 
            Repeater {
@@ -105,18 +98,22 @@ Page {
 
                DetailItem {
                    label: modelData.user ? modelData.user.name : ""
-                   value: modelData.role ? modelData.role : ""
+                   value: modelData.role ? (modelData.role === "editor"
+                        //% "Editor"
+                        ? qsTrId("albumInfoPage.roleEditor")
+                        //% "Viewer"
+                        : qsTrId("albumInfoPage.roleViewer")) : ""
                }
            }
 
            SectionHeader {
                //% "Sharing"
                text: qsTrId("albumInfoPage.sharing")
-               visible: albumInfo && albumInfo.shared
+               visible: !!(albumInfo && albumInfo.shared)
            }
 
            DetailItem {
-               visible: albumInfo && albumInfo.shared
+               visible: !!(albumInfo && albumInfo.shared)
                //% "Shared"
                label: qsTrId("albumInfoPage.shared")
                value: albumInfo && albumInfo.shared
@@ -124,6 +121,16 @@ Page {
                       ? qsTrId("albumInfoPage.sharedYes")
                       //% "No"
                       : qsTrId("albumInfoPage.sharedNo")
+           }
+
+           DetailItem {
+               //% "Comments and likes"
+               label: qsTrId("albumInfoPage.commentsAndLikes")
+               value: albumInfo && albumInfo.isActivityEnabled
+                      //% "Enabled"
+                      ? qsTrId("albumInfoPage.activityEnabled")
+                      //% "Disabled"
+                      : qsTrId("albumInfoPage.activityDisabled")
            }
        }
 
@@ -139,7 +146,7 @@ Page {
    Connections {
        target: immichApi
        onAlbumDetailsReceived: {
-           if (details.id === page.albumId) {
+           if (details && details.id === page.albumId) {
                albumInfo = details
            }
        }
@@ -148,12 +155,9 @@ Page {
                var updated = albumInfo
                updated.albumName = albumName
                updated.description = description
+               updated.isActivityEnabled = isActivityEnabled
+               updated.albumThumbnailAssetId = albumThumbnailAssetId
                albumInfo = updated
-           }
-       }
-       onUsersAddedToAlbum: {
-           if (albumId === page.albumId) {
-               immichApi.fetchAlbumDetails(page.albumId)
            }
        }
    }

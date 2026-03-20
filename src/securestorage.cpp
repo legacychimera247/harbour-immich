@@ -1,7 +1,6 @@
 #include "securestorage.h"
 #include <QDebug>
 #include <QEventLoop>
-#include <QSettings>
 
 using namespace Sailfish::Secrets;
 

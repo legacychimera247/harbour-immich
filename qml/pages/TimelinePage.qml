@@ -3,1059 +3,633 @@ import Sailfish.Silica 1.0
 import "../components"
 
 Page {
- id: page
- objectName: "timelinePage"
-
- property int assetsPerRow: isPortrait ? settingsManager.assetsPerRow : (settingsManager.assetsPerRow * 2)
- property bool loadingMore: false
- property real cellSize: width / assetsPerRow
- property int bucketCount: timelineModel.bucketCount
-
- // Filter state
- property string activeFilter: "all"  // all, favorites
- property string sortOrder: "desc"    // desc, asc
-
- // Selection mode
- property bool selectionMode: timelineModel.selectedCount > 0
-
- // Album selector state
- property var pendingAlbumAssetIds: []
-
- function refresh() {
-     timelineModel.clear()
-     // Not a nice way to avoid collapsing of the structure after the model is cleared
-     flickable.contentY = 0
-     timelineModel.setLoading(true)
-     var isFavorite = activeFilter === "favorites"
-     timelineModel.setFavoriteFilter(isFavorite)
-     immichApi.fetchTimelineBuckets(isFavorite, sortOrder)
- }
-
- SilicaFlickable {
-     id: flickable
-     anchors.top: parent.top
-     anchors.left: parent.left
-     anchors.right: parent.right
-     anchors.bottom: selectionActionBar.visible ? selectionActionBar.top : parent.bottom
-     contentHeight: contentColumn.height
-     clip: true
-
-     flickableDirection: Flickable.VerticalFlick
-     pixelAligned: true
-
-     PullDownMenu {
-         MenuItem {
-             //% "Settings"
-             text: qsTrId("timelinePage.settings")
-             onClicked: pageStack.push(Qt.resolvedUrl("SettingsPage.qml"))
-         }
-
-         MenuItem {
-             //% "Search"
-             text: qsTrId("timelinePage.search")
-             onClicked: pageStack.push(Qt.resolvedUrl("SearchPage.qml"))
-         }
-
-         MenuItem {
-             //% "Albums"
-             text: qsTrId("timelinePage.albums")
-             onClicked: pageStack.push(Qt.resolvedUrl("AlbumsPage.qml"))
-         }
-
-         MenuItem {
-             //% "Refresh"
-             text: qsTrId("timelinePage.refresh")
-             onClicked: page.refresh()
-         }
-     }
-
-     // Track visible range to optimize rendering
-     property real viewportTop: contentY
-     property real viewportBottom: contentY + height
-     property real loadBuffer: height * 1.5
-
-     Column {
-         id: contentColumn
-         width: parent.width
-         spacing: 0
-
-         PageHeader {
-             id: pageHeader
-             //% "Timeline"
-             title: qsTrId("timelinePage.timeline")
-         }
-
-         // Memories / On This Day section
-         MemoriesBar {
-             id: memoriesBar
-             width: parent.width
-             visible: activeFilter === "all" && settingsManager.showMemoriesBar
-         }
-
-         // Quick filters row
-         Item {
-             id: filterBar
-             width: parent.width
-             height: Theme.itemSizeExtraSmall + Theme.paddingMedium
-
-             Row {
-                 id: filterRow
-                 anchors.left: parent.left
-                 anchors.right: parent.right
-                 anchors.leftMargin: Theme.horizontalPageMargin
-                 anchors.rightMargin: Theme.horizontalPageMargin
-                 anchors.verticalCenter: parent.verticalCenter
-                 spacing: Theme.paddingSmall
-
-                 Repeater {
-                     model: [
-                         //% "All"
-                         { id: "all", label: qsTrId("timelinePage.all"), icon: "image://theme/icon-m-image" },
-                         //% "Favorites"
-                         { id: "favorites", label: qsTrId("timelinePage.favorites"), icon: "image://theme/icon-m-favorite" }
-                     ]
-
-                     BackgroundItem {
-                         width: (filterRow.width - Theme.paddingSmall - sortButton.width - Theme.paddingMedium) / 2
-                         height: Theme.itemSizeExtraSmall
-                         highlighted: page.activeFilter === modelData.id
-
-
-                         Rectangle {
-                             anchors.fill: parent
-                             radius: Theme.paddingSmall
-                             color: page.activeFilter === modelData.id ?
-                                    Theme.rgba(Theme.highlightBackgroundColor, 0.4) :
-                                    Theme.rgba(Theme.highlightBackgroundColor, 0.1)
-                             border.width: page.activeFilter === modelData.id ? 1 : 0
-                             border.color: Theme.highlightColor
-                         }
-
-                         Row {
-                             anchors.centerIn: parent
-                             spacing: Theme.paddingSmall
-
-                             Icon {
-                                 source: modelData.icon
-                                 width: Theme.iconSizeSmall
-                                 height: Theme.iconSizeSmall
-                                 anchors.verticalCenter: parent.verticalCenter
-                                 color: page.activeFilter === modelData.id ? Theme.highlightColor : Theme.primaryColor
-                             }
-
-                             Label {
-                                 text: modelData.label
-                                 font.pixelSize: Theme.fontSizeExtraSmall
-                                 color: page.activeFilter === modelData.id ? Theme.highlightColor : Theme.primaryColor
-                                 anchors.verticalCenter: parent.verticalCenter
-                             }
-                         }
-
-                         onClicked: {
-                             if (page.activeFilter !== modelData.id) {
-                                 page.activeFilter = modelData.id
-                                 page.refresh()
-                             }
-                         }
-                     }
-                 }
-
-                 // Sort order button
-                 BackgroundItem {
-                     id: sortButton
-                     width: Theme.itemSizeSmall
-                     height: Theme.itemSizeExtraSmall
-
-                     Rectangle {
-                         anchors.fill: parent
-                         radius: Theme.paddingSmall
-                         color: Theme.rgba(Theme.highlightBackgroundColor, 0.1)
-                     }
-
-                     Icon {
-                         anchors.centerIn: parent
-                         source: page.sortOrder === "desc" ? "image://theme/icon-m-down" : "image://theme/icon-m-up"
-                         width: Theme.iconSizeSmall
-                         height: Theme.iconSizeSmall
-                     }
-
-                     onClicked: {
-                         page.sortOrder = page.sortOrder === "desc" ? "asc" : "desc"
-                         page.refresh()
-                     }
-                 }
-             }
-         }
-
-         Item {
-             width: parent.width
-             height: Theme.paddingSmall
-         }
-
-         // Loading indicator for initial load
-         BusyIndicator {
-             anchors.horizontalCenter: parent.horizontalCenter
-             size: BusyIndicatorSize.Large
-             running: timelineModel.loading && bucketCount === 0
-             visible: running
-         }
-
-         Label {
-             anchors.horizontalCenter: parent.horizontalCenter
-             //% "Loading timeline..."
-             text: qsTrId("timelinePage.loading")
-             color: Theme.secondaryHighlightColor
-             visible: timelineModel.loading && bucketCount === 0
-         }
-
-         Repeater {
-             id: bucketsRepeater
-             model: page.bucketCount
-
-             Column {
-                 id: bucketColumn
-                 width: flickable.width
-                 spacing: 0
-                 visible: !assetsLoaded || (bucketSubGroups && bucketSubGroups.length > 0)
-                 property int bucketIndex: index
-                 property var bucketData: null
-                 property var bucketSubGroups: null
-                 property bool isFirstOfMonth: false
-                 property bool dataLoaded: false
-                 property bool assetsLoaded: false
-
-                 // Visibility-based loading - only check after layout is complete
-                 property real bucketTop: y
-                 property real bucketBottom: y + height
-                 property bool isNearViewport: false
-
-                 function checkViewportVisibility() {
-                     var nearTop = flickable.viewportTop - flickable.height
-                     var nearBottom = flickable.viewportBottom + flickable.height
-                     isNearViewport = (bucketBottom > nearTop) && (bucketTop < nearBottom)
-                 }
-
-                 onYChanged: checkViewportVisibility()
-
-                 onIsNearViewportChanged: {
-                     if (isNearViewport && !dataLoaded) {
-                         loadBucketData()
-                     }
-                     if (isNearViewport && !assetsLoaded) {
-                         // Delay asset loading to throttle requests during fast scrolling
-                         loadDelayTimer.restart()
-                     }
-                 }
-
-                 Timer {
-                     id: loadDelayTimer
-                     interval: 100
-                     repeat: false
-                     onTriggered: {
-                         if (bucketColumn.isNearViewport && !bucketColumn.assetsLoaded) {
-                             bucketColumn.requestAssets()
-                         }
-                     }
-                 }
-
-                 Component.onCompleted: {
-                     // Only load first 3 buckets immediately, rest will load on scroll
-                     if (bucketIndex < 3) {
-                         loadBucketData()
-                         requestAssets()
-                     }
-                 }
-
-                 function loadBucketData() {
-                     if (dataLoaded || !timelineModel) return
-                     bucketData = timelineModel.getBucketAt(bucketIndex)
-                     if (bucketIndex === 0) {
-                         isFirstOfMonth = true
-                     } else if (bucketData) {
-                         var prevBucket = timelineModel.getBucketAt(bucketIndex - 1)
-                         isFirstOfMonth = prevBucket ? prevBucket.monthYear !== bucketData.monthYear : false
-                     }
-                     dataLoaded = true
-                 }
-
-                 function requestAssets() {
-                     if (!timelineModel || !bucketData) return
-                     if (!timelineModel.isBucketLoaded(bucketIndex)) {
-                         timelineModel.requestBucketLoad(bucketIndex)
-                     } else {
-                         loadAssets()
-                     }
-                 }
-
-                 function loadAssets() {
-                     bucketSubGroups = timelineModel.getBucketSubGroups(bucketIndex)
-                     assetsLoaded = true
-                 }
-
-                 // Listen for bucket load completion
-                 Connections {
-                     target: timelineModel
-                     onDataChanged: {
-                         if (timelineModel.isBucketLoaded(bucketColumn.bucketIndex) && !bucketColumn.assetsLoaded) {
-                             bucketColumn.loadAssets()
-                         }
-                     }
-                     onBucketDataUpdated: {
-                         if (bucketColumn.assetsLoaded && bucketColumn.isNearViewport) {
-                             bucketSubGroups = timelineModel.getBucketSubGroups(bucketColumn.bucketIndex)
-                         }
-                     }
-                 }
-
-                 // Listen for scroll to check visibility (throttled)
-                 Connections {
-                     target: flickable
-                     onContentYChanged: visibilityThrottleTimer.restart()
-                 }
-
-                 Timer {
-                     id: visibilityThrottleTimer
-                     interval: 16  // ~60fps
-                     repeat: false
-                     onTriggered: bucketColumn.checkViewportVisibility()
-                 }
-
-                 // Bucket header
-                 Rectangle {
-                     width: parent.width
-                     height: Theme.itemSizeSmall
-                     color: Theme.rgba(Theme.highlightBackgroundColor, 0.1)
-
-                     Label {
-                         anchors.left: parent.left
-                         anchors.leftMargin: Theme.horizontalPageMargin
-                         anchors.verticalCenter: parent.verticalCenter
-                         text: bucketData ? bucketData.monthYear : ""
-                         font.pixelSize: Theme.fontSizeLarge
-                         font.bold: true
-                         color: Theme.highlightColor
-                         visible: isFirstOfMonth
-                     }
-
-                     // Asset count indicator when not loaded
-                     Label {
-                         anchors.left: parent.left
-                         anchors.leftMargin: Theme.horizontalPageMargin
-                         anchors.verticalCenter: parent.verticalCenter
-                         text: bucketData ? (bucketData.count === 1
-                            //% "1 item"
-                            ? qsTrId("timelinePage.item")
-                            //% "%1 items"
-                            : qsTrId("timelinePage.items").arg(bucketData.count)) : ""
-                         font.pixelSize: Theme.fontSizeSmall
-                         color: Theme.secondaryColor
-                         visible: !isFirstOfMonth && !assetsLoaded
-                     }
-                 }
-
-                 // Loading indicator for bucket assets
-                 Item {
-                     width: parent.width
-                     height: !assetsLoaded && isNearViewport ? loadingPlaceholderHeight : 0
-                     visible: !assetsLoaded && isNearViewport
-
-                     // Use same height estimation as placeholder to prevent jumps
-                     property real loadingPlaceholderHeight: {
-                         if (!bucketData) return Theme.itemSizeLarge
-                         var assetsPerRow = page.assetsPerRow
-                         var rows = Math.ceil(bucketData.count / assetsPerRow)
-                         var estimatedSubgroups = Math.min(Math.ceil(bucketData.count / 10), 15)
-                         var subgroupHeaderHeight = estimatedSubgroups * Theme.itemSizeExtraSmall
-                         return rows * page.cellSize + subgroupHeaderHeight
-                     }
-
-                     BusyIndicator {
-                         anchors.centerIn: parent
-                         size: BusyIndicatorSize.Small
-                         running: parent.visible
-                     }
-                 }
-
-
-                 // Placeholder for unloaded buckets (estimated height)
-                 Item {
-                     width: parent.width
-                     height: !assetsLoaded && !isNearViewport ? estimatedHeight : 0
-                     visible: !assetsLoaded && !isNearViewport
-
-                     property real estimatedHeight: {
-                         if (!bucketData) return 0
-                         var assetsPerRow = page.assetsPerRow
-                         var rows = Math.ceil(bucketData.count / assetsPerRow)
-                         // Estimate subgroup count (assume ~3 days per month on average)
-                         var estimatedSubgroups = Math.min(Math.ceil(bucketData.count / 10), 15)
-                         var subgroupHeaderHeight = estimatedSubgroups * Theme.itemSizeExtraSmall
-                         return rows * page.cellSize + subgroupHeaderHeight
-                     }
-                 }
-
-                 // Sub-groups by date
-                 Column {
-                     width: parent.width
-                     visible: assetsLoaded
-                     spacing: 0
-
-                     Repeater {
-                         model: bucketColumn.assetsLoaded ? bucketSubGroups : null
-
-                         Column {
-                             width: parent.width
-                             spacing: 0
-
-                             property var subGroupData: modelData
-                             property int subGroupIndex: index
-
-                             // Sub-group date header
-                             Rectangle {
-                                 width: parent.width
-                                 height: bucketSubGroups && bucketSubGroups.length > 0 ? Theme.itemSizeExtraSmall : 0
-                                 visible: bucketSubGroups && bucketSubGroups.length > 0
-                                 color: "transparent"
-
-                                 property bool isSubGroupSelected: {
-                                     if (!subGroupData || !subGroupData.assets || timelineModel.selectedCount === 0) return false
-                                     for (var i = 0; i < subGroupData.assets.length; i++) {
-                                         if (!timelineModel.isAssetSelected(subGroupData.assets[i].id)) {
-                                             return false
-                                         }
-                                     }
-                                     return true
-                                 }
-
-                                 Label {
-                                     id: subGroupDateLabel
-                                     anchors.left: parent.left
-                                     anchors.leftMargin: Theme.horizontalPageMargin
-                                     anchors.verticalCenter: parent.verticalCenter
-                                     text: subGroupData ? subGroupData.displayDate : ""
-                                     font.pixelSize: Theme.fontSizeSmall
-                                     color: Theme.secondaryHighlightColor
-                                 }
-
-                                 IconButton {
-                                     id: subGroupSelectButton
-                                     anchors.right: parent.right
-                                     anchors.rightMargin: Theme.horizontalPageMargin - Theme.paddingMedium
-                                     anchors.verticalCenter: parent.verticalCenter
-                                     icon.source: parent.isSubGroupSelected ? "image://theme/icon-m-remove" : "image://theme/icon-m-add"
-                                     icon.color: parent.isSubGroupSelected ? Theme.errorColor : Theme.primaryColor
-
-                                     onClicked: {
-                                         if (!subGroupData || !subGroupData.assets) return
-                                         var assets = subGroupData.assets
-                                         if (parent.isSubGroupSelected) {
-                                             // Deselect all assets in this subgroup
-                                             for (var i = 0; i < assets.length; i++) {
-                                                 if (timelineModel.isAssetSelected(assets[i].id)) {
-                                                     timelineModel.toggleSelection(bucketColumn.bucketIndex, assets[i].assetIndex)
-                                                 }
-                                             }
-                                         } else {
-                                             // Select all assets in this subgroup
-                                             for (var i = 0; i < assets.length; i++) {
-                                                 if (!timelineModel.isAssetSelected(assets[i].id)) {
-                                                     timelineModel.toggleSelection(bucketColumn.bucketIndex, assets[i].assetIndex)
-                                                 }
-                                             }
-                                         }
-                                     }
-                                 }
-                             }
-
-                             // Assets in this sub-group
-                             Flow {
-                                 width: parent.width
-
-                                 Repeater {
-                                     model: subGroupData ? subGroupData.assets : null
-
-                                     Loader {
-                                         id: assetLoader
-                                         width: page.cellSize
-                                         height: page.cellSize
-
-                                         property bool shouldCreate: bucketColumn.isNearViewport
-                                         active: shouldCreate
-
-                                         sourceComponent: AssetGridItem {
-                                             id: gridItem
-                                             width: page.cellSize
-                                             height: page.cellSize
-                                             assetId: modelData.id
-                                             isFavorite: modelData.isFavorite
-                                             isSelected: timelineModel.selectedCount >= 0 && timelineModel.isAssetSelected(modelData.id)
-                                             isVideo: modelData.isVideo
-                                             assetIndex: modelData.assetIndex
-                                             thumbhash: modelData.thumbhash || ""
-                                             duration: modelData.duration || ""
-
-                                             shouldLoad: bucketColumn.isNearViewport
-
-                                             onClicked: {
-                                                 if (timelineModel.selectedCount > 0) {
-                                                     timelineModel.toggleSelection(bucketColumn.bucketIndex, modelData.assetIndex)
-                                                 } else {
-                                                     // Navigate to asset detail
-                                                     var assetIndex = timelineModel.getAssetIndexById(modelData.id)
-                                                     pageStack.push(Qt.resolvedUrl("AssetDetailPage.qml"), {
-                                                         "assetId": modelData.id,
-                                                         "isFavorite": gridItem.isFavorite,
-                                                         "isVideo": modelData.isVideo,
-                                                         "thumbhash": modelData.thumbhash || "",
-                                                         "currentIndex": assetIndex
-                                                     })
-                                                 }
-                                             }
-
-                                             onPressAndHold: {
-                                                 timelineModel.toggleSelection(bucketColumn.bucketIndex, modelData.assetIndex)
-                                             }
-
-                                             onAddToSelection: {
-                                                 timelineModel.toggleSelection(bucketColumn.bucketIndex, modelData.assetIndex)
-                                             }
-                                         }
-                                     }
-                                 }
-                             }
-                         }
-                     }
-                 }
-             }
-         }
-
-         // Empty state
-         Item {
-             width: parent.width
-             height: flickable.height - pageHeader.height - memoriesBar.height - filterBar.height
-             visible: !timelineModel.loading && bucketCount === 0
-
-             Column {
-                 width: parent.width
-                 spacing: Theme.paddingLarge
-                 anchors.verticalCenter: parent.verticalCenter
-
-                 Item {
-                     width: parent.width
-                     height: Theme.paddingLarge * 2
-                 }
-
-                 Icon {
-                     anchors.horizontalCenter: parent.horizontalCenter
-                     source: page.activeFilter === "favorites" ? "image://theme/icon-m-favorite" : "image://theme/icon-m-image"
-                     color: Theme.highlightColor
-                 }
-
-                 Label {
-                     x: Theme.horizontalPageMargin
-                     width: parent.width - 2 * Theme.horizontalPageMargin
-                     text: page.activeFilter === "favorites"
-                           //% "No favorites yet"
-                           ? qsTrId("timelinePage.noFavoritesLabel")
-                           //% "No assets yet"
-                           : qsTrId("timelinePage.noAssetsLabel")
-                     font.pixelSize: Theme.fontSizeLarge
-                     color: Theme.highlightColor
-                     wrapMode: Text.WordWrap
-                     horizontalAlignment: Text.AlignHCenter
-                 }
-
-                 Label {
-                     x: Theme.horizontalPageMargin
-                     width: parent.width - 2 * Theme.horizontalPageMargin
-                     text: page.activeFilter === "favorites"
-                           //% "Long-press an asset and add it to favorites to see it here"
-                           ? qsTrId("timelinePage.noFavoritesInfo")
-                           //% "Upload or import assets in Immich to start building your timeline"
-                           : qsTrId("timelinePage.noAssetsInfo")
-                     font.pixelSize: Theme.fontSizeSmall
-                     color: Theme.secondaryHighlightColor
-                     wrapMode: Text.WordWrap
-                     horizontalAlignment: Text.AlignHCenter
-                 }
-             }
-         }
-
-         Item {
-             width: parent.width
-             height: Theme.paddingLarge
-         }
-     }
-
-     VerticalScrollDecorator {}
- }
-
-
- // Selection action bar
- SelectionActionBar {
-     id: selectionActionBar
-     anchors.left: parent.left
-     anchors.right: parent.right
-     anchors.bottom: parent.bottom
-
-     visible: timelineModel.selectedCount > 0
-     selectedCount: timelineModel.selectedCount
-     allAreFavorites: timelineModel.selectedCount > 0 && timelineModel.areAllSelectedFavorites()
-     hasAnyFavorites: timelineModel.selectedCount > 0 && timelineModel.areAnySelectedFavorites()
-
-     onAddToFavorites: {
-         var selectedIds = timelineModel.getSelectedAssetIds()
-         immichApi.toggleFavorite(selectedIds, true)
-     }
-     onRemoveFromFavorites: {
-         var selectedIds = timelineModel.getSelectedAssetIds()
-         immichApi.toggleFavorite(selectedIds, false)
-     }
-     onShare: {
-         var selectedIds = timelineModel.getSelectedAssetIds()
-         pageStack.push(Qt.resolvedUrl("SharePage.qml"), {
-             assetIds: selectedIds,
-             shareType: "INDIVIDUAL"
-         })
-     }
-     onAddToAlbum: {
-         page.pendingAlbumAssetIds = timelineModel.getSelectedAssetIds()
-         var dialog = pageStack.push(albumSelectorDialog)
-         dialog.accepted.connect(function() {
-             if (dialog.createNew) {
-                 // Album will be created, then we add assets in albumCreated handler
-             } else if (dialog.selectedAlbumId !== "") {
-                 immichApi.addAssetsToAlbum(dialog.selectedAlbumId, page.pendingAlbumAssetIds)
-                 timelineModel.clearSelection()
-             }
-         })
-     }
-     onClearSelection: timelineModel.clearSelection()
-     onDownload: {
-         var selectedIds = timelineModel.getSelectedAssetIds()
-         for (var i = 0; i < selectedIds.length; i++) {
-             immichApi.downloadAsset(selectedIds[i])
-         }
-         timelineModel.clearSelection()
-         notification.show(selectedIds.length === 1
-            //% "Downloading asset..."
-            ? qsTrId("timelinePage.downloadingAsset")
-            //% "Downloading %1 assets..."
-            : qsTrId("timelinePage.downloadingAssets").arg(selectedIds.length))
-     }
-     onDeleteSelected: {
-         var selectedIds = timelineModel.getSelectedAssetIds()
-         deleteRemorse.execute(selectedIds.length === 1
-            //% "Deleting asset"
-            ? qsTrId("timelinePage.deletingAsset")
-            //% "Deleting %1 assets"
-            : qsTrId("timelinePage.deletingAssets").arg(selectedIds.length), function() {
-                immichApi.deleteAssets(selectedIds)
-                timelineModel.clearSelection()
-         })
-     }
- }
-
- ScrollToTopButton {
-     targetFlickable: flickable
-     actionBarHeight: selectionActionBar.visible ? selectionActionBar.contentHeight : 0
-     forceHidden: selectionActionBar.menuOpen
- }
-
- RemorsePopup {
-     id: deleteRemorse
- }
-
- Component {
-     id: albumSelectorDialog
-     Dialog {
-         id: albumDialog
-         property string selectedAlbumId: ""
-         property bool createNew: false
-         property string newAlbumName: ""
-         property string activeAlbumFilter: "all"
-
-         function applyAlbumFilter() {
-             if (activeAlbumFilter === "shared") {
-                 immichApi.fetchAlbums("true")
-             } else if (activeAlbumFilter === "mine") {
-                 immichApi.fetchAlbums("false")
-             } else {
-                 immichApi.fetchAlbums()
-             }
-         }
-
-         canAccept: selectedAlbumId !== "" || (createNew && newAlbumName.length > 0)
-
-         onAccepted: {
-             if (createNew && newAlbumName.length > 0) {
-                 immichApi.createAlbum(newAlbumName, "")
-             }
-         }
-
-         SilicaFlickable {
-             anchors.fill: parent
-             contentHeight: albumColumn.height
-
-             Column {
-                 id: albumColumn
-                 width: parent.width
-
-                 DialogHeader {
-                     //% "Select or create album"
-                     title: qsTrId("timelinePage.selectOrCreate")
-                 }
-
-                 // Create new album section
-                 SectionHeader {
-                     //% "Create new album"
-                     text: qsTrId("timelinePage.createNew")
-                 }
-
-                 TextField {
-                     id: newAlbumField
-                     width: parent.width
-                     //% "Album name"
-                     placeholderText: qsTrId("timelinePage.albumName")
-                     //% "New album name"
-                     label: qsTrId("timelinePage.newAlbumName")
-                     onTextChanged: {
-                         albumDialog.newAlbumName = text
-                         if (text.length > 0) {
-                             albumDialog.createNew = true
-                             albumDialog.selectedAlbumId = ""
-                         } else {
-                             albumDialog.createNew = false
-                         }
-                     }
-                     EnterKey.iconSource: "image://theme/icon-m-enter-accept"
-                     EnterKey.onClicked: {
-                         if (text.length > 0) {
-                             albumDialog.accept()
-                         }
-                     }
-                 }
-
-                 // Existing albums section
-                 SectionHeader {
-                     //% "Existing albums"
-                     text: qsTrId("timelinePage.existingAlbums")
-                     visible: albumModel.rowCount() > 0
-                 }
-
-                 // Album type filter row
-                 Item {
-                     width: parent.width
-                     height: Theme.itemSizeExtraSmall + Theme.paddingMedium
-                     visible: albumModel.rowCount() > 0
-
-                     Row {
-                         id: selectorFilterRow
-                         anchors.left: parent.left
-                         anchors.right: parent.right
-                         anchors.leftMargin: Theme.horizontalPageMargin
-                         anchors.rightMargin: Theme.horizontalPageMargin
-                         anchors.verticalCenter: parent.verticalCenter
-                         spacing: Theme.paddingSmall
-
-                         Repeater {
-                             model: [
-                                 //% "All"
-                                 { id: "all", label: qsTrId("timelinePage.filterAll"), icon: "image://theme/icon-m-folder" },
-                                 //% "Shared with me"
-                                 { id: "shared", label: qsTrId("timelinePage.filterSharedWithMe"), icon: "image://theme/icon-m-share" },
-                                 //% "My albums"
-                                 { id: "mine", label: qsTrId("timelinePage.filterMyAlbums"), icon: "image://theme/icon-m-person" }
-                             ]
-
-                             BackgroundItem {
-                                 width: (selectorFilterRow.width - 2 * Theme.paddingSmall) / 3
-                                 height: Theme.itemSizeExtraSmall
-                                 highlighted: albumDialog.activeAlbumFilter === modelData.id
-
-                                 Rectangle {
-                                     anchors.fill: parent
-                                     radius: Theme.paddingSmall
-                                     color: albumDialog.activeAlbumFilter === modelData.id ?
-                                            Theme.rgba(Theme.highlightBackgroundColor, 0.4) :
-                                            Theme.rgba(Theme.highlightBackgroundColor, 0.1)
-                                     border.width: albumDialog.activeAlbumFilter === modelData.id ? 1 : 0
-                                     border.color: Theme.highlightColor
-                                 }
-
-                                 Row {
-                                     anchors.centerIn: parent
-                                     spacing: Theme.paddingSmall
-
-                                     Icon {
-                                         source: modelData.icon
-                                         width: Theme.iconSizeSmall
-                                         height: Theme.iconSizeSmall
-                                         anchors.verticalCenter: parent.verticalCenter
-                                         color: albumDialog.activeAlbumFilter === modelData.id ? Theme.highlightColor : Theme.primaryColor
-                                     }
-
-                                     Label {
-                                         text: modelData.label
-                                         font.pixelSize: Theme.fontSizeExtraSmall
-                                         color: albumDialog.activeAlbumFilter === modelData.id ? Theme.highlightColor : Theme.primaryColor
-                                         anchors.verticalCenter: parent.verticalCenter
-                                     }
-                                 }
-
-                                 onClicked: {
-                                     if (albumDialog.activeAlbumFilter !== modelData.id) {
-                                         albumDialog.activeAlbumFilter = modelData.id
-                                         albumDialog.applyAlbumFilter()
-                                     }
-                                 }
-                             }
-                         }
-                     }
-                 }
-
-                 Repeater {
-                     model: albumModel
-
-                     ListItem {
-                         contentHeight: Theme.itemSizeMedium
-                         highlighted: down || albumDialog.selectedAlbumId === albumId
-
-                         Row {
-                             anchors.left: parent.left
-                             anchors.leftMargin: Theme.horizontalPageMargin
-                             anchors.verticalCenter: parent.verticalCenter
-                             spacing: Theme.paddingMedium
-
-                             Icon {
-                                 source: "image://theme/icon-m-folder"
-                                 width: Theme.iconSizeMedium
-                                 height: Theme.iconSizeMedium
-                                 anchors.verticalCenter: parent.verticalCenter
-                             }
-
-                             Column {
-                                 anchors.verticalCenter: parent.verticalCenter
-
-                                 Label {
-                                     text: albumName
-                                     color: highlighted ? Theme.highlightColor : Theme.primaryColor
-                                 }
-
-                                 Label {
-                                     text: assetCount === 1
-                                           //% "1 asset"
-                                           ? qsTrId("timelinePage.asset")
-                                           //% "%1 assets"
-                                           : qsTrId("timelinePage.assets").arg(assetCount || 0)
-                                     font.pixelSize: Theme.fontSizeSmall
-                                     color: Theme.secondaryColor
-                                 }
-                             }
-                         }
-
-                         onClicked: {
-                             albumDialog.selectedAlbumId = albumId
-                             albumDialog.createNew = false
-                             newAlbumField.text = ""
-                             albumDialog.accept()
-                         }
-                     }
-                 }
-
-                 Label {
-                     x: Theme.horizontalPageMargin
-                     width: parent.width - 2 * Theme.horizontalPageMargin
-                     //% "No albums yet"
-                     text: qsTrId("timelinePage.noAlbums")
-                     color: Theme.secondaryColor
-                     visible: albumModel.rowCount() === 0
-                 }
-
-                 Item {
-                     width: parent.width
-                     height: Theme.paddingLarge
-                 }
-             }
-
-
-             VerticalScrollDecorator {}
-         }
-     }
- }
-
-
- // Pending scroll state
- property string pendingScrollAssetId: ""
- property int pendingScrollBucketIndex: -1
- property bool scrollInProgress: pendingScrollBucketIndex >= 0
-
- function performScrollToBucket(bucketIndex) {
-     // Calculate Y position by summing heights of preceding buckets
-     var bucketY = 0
-     for (var i = 0; i < bucketIndex; i++) {
-         var item = bucketsRepeater.itemAt(i)
-         if (item) {
-             bucketY += item.height
-         }
-     }
-     // Add offset for page header, filter bar and memories bar
-     var headerOffset = Theme.itemSizeLarge + filterBar.height + Theme.paddingSmall
-     if (memoriesBar.visible) {
-         headerOffset += memoriesBar.height
-     }
-     bucketY += headerOffset
-     flickable.contentY = Math.max(0, bucketY - Theme.paddingLarge)
-
-     // Force viewport visibility check after scroll
-     viewportCheckTimer.restart()
- }
-
- Connections {
-     target: timelineModel
-     onScrollToAssetRequested: {
-         // First, ensure the target bucket's data is loaded
-         var targetItem = bucketsRepeater.itemAt(bucketIndex)
-         if (targetItem) {
-             targetItem.loadBucketData()
-         }
-
-         // Check if bucket assets are already loaded
-         if (timelineModel.isBucketLoaded(bucketIndex)) {
-             // Bucket is loaded, scroll immediately
-             performScrollToBucket(bucketIndex)
-         } else {
-             // Request bucket load and wait
-             pendingScrollAssetId = assetId
-             pendingScrollBucketIndex = bucketIndex
-             timelineModel.requestBucketLoad(bucketIndex)
-
-             // Also pre-load a few surrounding buckets to stabilize heights
-             for (var i = Math.max(0, bucketIndex - 2); i <= Math.min(bucketIndex + 2, bucketCount - 1); i++) {
-                 if (i !== bucketIndex) {
-                     var item = bucketsRepeater.itemAt(i)
-                     if (item) {
-                         item.loadBucketData()
-                     }
-                     if (!timelineModel.isBucketLoaded(i)) {
-                         timelineModel.requestBucketLoad(i)
-                     }
-                 }
-             }
-         }
-     }
-
-     onDataChanged: {
-         // Check if pending scroll bucket is now loaded
-         if (pendingScrollBucketIndex >= 0 && timelineModel.isBucketLoaded(pendingScrollBucketIndex)) {
-             var targetItem = bucketsRepeater.itemAt(pendingScrollBucketIndex)
-             if (targetItem) {
-                 targetItem.loadAssets()
-             }
-             // Small delay to let layout stabilize
-             scrollDelayTimer.restart()
-         }
-     }
- }
-
- Timer {
-     id: scrollDelayTimer
-     interval: 100
-     repeat: false
-     onTriggered: {
-         if (pendingScrollBucketIndex >= 0) {
-             performScrollToBucket(pendingScrollBucketIndex)
-             pendingScrollAssetId = ""
-             pendingScrollBucketIndex = -1
-         }
-     }
- }
-
- Timer {
-     id: viewportCheckTimer
-     interval: 50
-     repeat: false
-     onTriggered: {
-         // Force all buckets to check their viewport visibility
-         for (var i = 0; i < bucketsRepeater.count; i++) {
-             var item = bucketsRepeater.itemAt(i)
-             if (item && item.checkViewportVisibility) {
-                 item.checkViewportVisibility();
-             }
-         }
-     }
- }
-
- Component.onCompleted: {
-     // Load timeline using buckets API
-     timelineModel.setLoading(true)
-     immichApi.fetchTimelineBuckets()
-     // Load memories
-     immichApi.fetchMemories()
-     memoriesBar.loading = true
- }
-
- Connections {
-     target: immichApi
-     onTimelineBucketsReceived: {
-         timelineModel.setLoading(false)
-     }
-     onMemoriesReceived: {
-         memoriesBar.loading = false
-         memoriesBar.loadMemories(memories)
-     }
-     onErrorOccurred: {
-         timelineModel.setLoading(false)
-         notification.showError(error)
-     }
-     onAssetsDeleted: {
-         notification.show(assetIds.length === 1
-            //% "Deleted asset"
-            ? qsTrId("timelinePage.deletedAsset")
-            //% "Deleted %1 assets"
-            : qsTrId("timelinePage.deletedAssets").arg(assetIds.length))
-     }
-     onAssetDownloaded: {
-         //% "Downloaded to: %1"
-         notification.show(qsTrId("timelinePage.downloaded").arg(filePath))
-     }
-     onAssetsAddedToAlbum: {
-         timelineModel.clearSelection()
-         page.pendingAlbumAssetIds = []
-         //% "Added asset(s) to album"
-         notification.show(qsTrId("timelinePage.addedToAlbum"))
-     }
-     onFavoritesToggled: {
-         timelineModel.clearSelection()
-         notification.show(isFavorite ? (assetIds.length === 1
-              //% "Added asset to favorites"
-              ? qsTrId("timelinePage.addedAssetToFavorites")
-              //% "Added %1 assets to favorites"
-              : qsTrId("timelinePage.addedAssetsToFavorites").arg(assetIds.length)) : (assetIds.length === 1
-              //% "Removed asset from favorites"
-              ? qsTrId("timelinePage.removedAssetFromFavorites")
-              //% "Removed %1 assets from favorites"
-              : qsTrId("timelinePage.removedAssetsFromFavorites").arg(assetIds.length)))
-     }
-     onAlbumCreated: {
-         // After album is created, add pending assets to it
-         if (page.pendingAlbumAssetIds.length > 0) {
-             immichApi.addAssetsToAlbum(albumId, page.pendingAlbumAssetIds)
-         }
-         //% "Created album: %1"
-         notification.show(qsTrId("timelinePage.createdAlbum").arg(albumName))
-         // Refresh albums list
-         immichApi.fetchAlbums()
-     }
-     onUploadAllComplete: {
-         if (successCount > 0) {
-             page.refresh()
-         }
-     }
- }
-
- NotificationBanner {
-     id: notification
-     anchors.bottom: parent.bottom
- }
+    id: page
+    objectName: "timelinePage"
+
+    property int assetsPerRow: isPortrait ? settingsManager.assetsPerRow : (settingsManager.assetsPerRow * 2)
+    property real cellSize: width / assetsPerRow
+    property int bucketCount: timelineModel.bucketCount
+
+    // Filter state
+    property string activeFilter: "all"  // all, favorites
+    property string sortOrder: "desc"    // desc, asc
+
+    // Album selector state
+    property var pendingAlbumAssetIds: []
+
+    // Highlight state for scroll-to-asset
+    property string highlightAssetId: ""
+    property var memoriesBarItem: null
+    property bool memoriesLoading: false
+    property var pendingMemoriesData: null
+
+    function resetPendingScrollState() {
+        pendingScrollAssetId = ""
+        pendingScrollBucketIndex = -1
+        pendingScrollAssetIndex = -1
+        pendingScrollLastTargetY = -1
+        pendingScrollLastBucketHeight = -1
+        pendingScrollStablePasses = 0
+        pendingScrollRetryCount = 0
+    }
+
+    function refresh() {
+        resetPendingScrollState()
+        highlightAssetId = ""
+        scrollFinalizeTimer.stop()
+        highlightClearTimer.stop()
+        bucketsList.positionViewAtBeginning()
+        timelineModel.clear()
+        timelineModel.setLoading(true)
+        var isFavorite = activeFilter === "favorites"
+        timelineModel.setFavoriteFilter(isFavorite)
+        immichApi.fetchTimelineBuckets(isFavorite, sortOrder)
+    }
+
+    function currentBucketLoadMargin() {
+        return bucketsList.flicking ? 0 : Math.max(bucketsList.height * 0.25, 300)
+    }
+
+    function shouldAutoLoadBucket(bucketIndex, itemY, itemHeight) {
+        if (pendingScrollBucketIndex >= 0) {
+            return bucketIndex === pendingScrollBucketIndex
+        }
+        if (bucketCount <= 0) {
+            return false
+        }
+
+        var margin = currentBucketLoadMargin()
+        return itemY + itemHeight >= bucketsList.contentY - margin && itemY <= bucketsList.contentY + bucketsList.height + margin
+    }
+
+    function findBucketItem(bucketIndex) {
+        if (!bucketsList.contentItem) return null
+        var children = bucketsList.contentItem.children
+        for (var i = 0; i < children.length; i++) {
+            var child = children[i]
+            if (child && child.bucketIndex === bucketIndex) {
+                return child
+            }
+        }
+        return null
+    }
+
+    SilicaListView {
+        id: bucketsList
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: selectionActionBar.shown ? selectionActionBar.top : parent.bottom
+        clip: true
+        cacheBuffer: Math.max(height * 2, 2000)
+        pixelAligned: true
+        model: timelineModel
+
+        PullDownMenu {
+            MenuItem {
+                //% "Settings"
+                text: qsTrId("timelinePage.settings")
+                onClicked: pageStack.push(Qt.resolvedUrl("SettingsPage.qml"))
+            }
+
+            MenuItem {
+                //% "Search"
+                text: qsTrId("timelinePage.search")
+                onClicked: pageStack.push(Qt.resolvedUrl("SearchPage.qml"))
+            }
+
+            MenuItem {
+                //% "Albums"
+                text: qsTrId("timelinePage.albums")
+                onClicked: pageStack.push(Qt.resolvedUrl("AlbumsPage.qml"))
+            }
+
+            MenuItem {
+                //% "Upload"
+                text: qsTrId("timelinePage.upload")
+                onClicked: pageStack.push(Qt.resolvedUrl("UploadPage.qml"))
+            }
+
+            MenuItem {
+                //% "Refresh"
+                text: qsTrId("timelinePage.refresh")
+                onClicked: {
+                    page.refresh()
+                    page.memoriesLoading = true
+                    immichApi.fetchMemories()
+                }
+            }
+        }
+
+        header: Column {
+            width: bucketsList.width
+            spacing: 0
+
+            PageHeader {
+                //% "Timeline"
+                title: qsTrId("timelinePage.timeline")
+            }
+
+            MemoriesBar {
+                id: memoriesBar
+                width: parent.width
+                loading: page.memoriesLoading
+                visible: activeFilter === "all" && settingsManager.showMemoriesBar
+
+                Component.onCompleted: {
+                    page.memoriesBarItem = memoriesBar
+                    if (page.pendingMemoriesData !== null) {
+                        memoriesBar.loadMemories(page.pendingMemoriesData)
+                        page.pendingMemoriesData = null
+                    }
+                }
+
+                Component.onDestruction: {
+                    if (page.memoriesBarItem === memoriesBar) {
+                        page.memoriesBarItem = null
+                    }
+                }
+            }
+
+            TimelineFilterBar {
+                activeFilter: page.activeFilter
+                sortOrder: page.sortOrder
+                onFilterActivated: {
+                    page.activeFilter = filter
+                    page.refresh()
+                }
+                onSortOrderToggled: {
+                    page.sortOrder = order
+                    page.refresh()
+                }
+            }
+
+            Item {
+                width: parent.width
+                height: Theme.paddingSmall
+            }
+        }
+
+        delegate: TimelineBucketDelegate {
+            width: bucketsList.width
+            bucketIndex: index
+            bucketKey: timelineModel.getBucketTimeBucket(index)
+            cellSize: page.cellSize
+            assetsPerRow: page.assetsPerRow
+            highlightAssetId: page.highlightAssetId
+            autoLoadAssets: page.shouldAutoLoadBucket(index, y, height)
+
+            onAssetClicked: {
+                if (stackId && stackId !== "") {
+                    pageStack.push(Qt.resolvedUrl("StackDetailPage.qml"), {
+                        "stackId": stackId,
+                        "primaryAssetId": assetId,
+                        "primaryIsFavorite": isFavorite,
+                        "primaryThumbhash": thumbhash,
+                        "timelineAssetIndex": currentIndex
+                    })
+                } else {
+                    pageStack.push(Qt.resolvedUrl("AssetDetailPage.qml"), {
+                        "assetId": assetId,
+                        "isFavorite": isFavorite,
+                        "isVideo": isVideo,
+                        "thumbhash": thumbhash,
+                        "currentIndex": currentIndex
+                    })
+                }
+            }
+        }
+
+        footer: Item {
+            width: parent.width
+            height: Theme.paddingLarge
+        }
+
+        VerticalScrollDecorator {}
+    }
+
+    Item {
+        anchors.left: bucketsList.left
+        anchors.right: bucketsList.right
+        anchors.top: bucketsList.top
+        anchors.topMargin: bucketsList.headerItem ? bucketsList.headerItem.height : 0
+        anchors.bottom: bucketsList.bottom
+        visible: timelineModel.loading && bucketCount === 0
+
+        Column {
+            width: parent.width
+            spacing: Theme.paddingMedium
+            anchors.centerIn: parent
+
+            BusyIndicator {
+                anchors.horizontalCenter: parent.horizontalCenter
+                size: BusyIndicatorSize.Large
+                running: parent.parent.visible
+            }
+
+            Label {
+                anchors.horizontalCenter: parent.horizontalCenter
+                //% "Loading timeline..."
+                text: qsTrId("timelinePage.loading")
+                color: Theme.secondaryHighlightColor
+            }
+        }
+    }
+
+    Item {
+        anchors.left: bucketsList.left
+        anchors.right: bucketsList.right
+        anchors.top: bucketsList.top
+        anchors.topMargin: bucketsList.headerItem ? bucketsList.headerItem.height : 0
+        anchors.bottom: bucketsList.bottom
+        visible: !timelineModel.loading && bucketCount === 0
+
+        Column {
+            width: parent.width
+            spacing: Theme.paddingLarge
+            anchors.centerIn: parent
+
+            Icon {
+                anchors.horizontalCenter: parent.horizontalCenter
+                source: page.activeFilter === "favorites" ? "image://theme/icon-m-favorite" : "image://theme/icon-m-image"
+                color: Theme.highlightColor
+            }
+
+            Label {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                text: page.activeFilter === "favorites"
+                    //% "No favorites yet"
+                    ? qsTrId("timelinePage.noFavoritesLabel")
+                    //% "No assets yet"
+                    : qsTrId("timelinePage.noAssetsLabel")
+                font.pixelSize: Theme.fontSizeLarge
+                color: Theme.highlightColor
+                wrapMode: Text.WordWrap
+                horizontalAlignment: Text.AlignHCenter
+            }
+
+            Label {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                text: page.activeFilter === "favorites"
+                    //% "Long-press an asset and add it to favorites to see it here"
+                    ? qsTrId("timelinePage.noFavoritesInfo")
+                    //% "Upload or import assets in Immich to start building your timeline"
+                    : qsTrId("timelinePage.noAssetsInfo")
+                font.pixelSize: Theme.fontSizeSmall
+                color: Theme.secondaryHighlightColor
+                wrapMode: Text.WordWrap
+                horizontalAlignment: Text.AlignHCenter
+            }
+        }
+    }
+
+    // Selection action bar
+    SelectionActionBar {
+        id: selectionActionBar
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+
+        selectedCount: timelineModel.selectedCount
+        allAreFavorites: timelineModel.selectedCount > 0 && timelineModel.areAllSelectedFavorites()
+        hasAnyFavorites: timelineModel.selectedCount > 0 && timelineModel.areAnySelectedFavorites()
+        canStack: timelineModel.selectedCount > 0 && !timelineModel.isAnySelectedAStack()
+
+        onStackSelected: {
+            var selectedIds = timelineModel.getSelectedAssetIds()
+            immichApi.createStack(selectedIds)
+        }
+        onAddToFavorites: {
+            var selectedIds = timelineModel.getSelectedAssetIds()
+            immichApi.toggleFavorite(selectedIds, true)
+        }
+        onRemoveFromFavorites: {
+            var selectedIds = timelineModel.getSelectedAssetIds()
+            immichApi.toggleFavorite(selectedIds, false)
+        }
+        onShare: {
+            var selectedIds = timelineModel.getSelectedAssetIds()
+            pageStack.push(Qt.resolvedUrl("SharePage.qml"), {
+                assetIds: selectedIds,
+                shareType: "INDIVIDUAL"
+            })
+        }
+        onAddToAlbum: {
+            page.pendingAlbumAssetIds = timelineModel.getSelectedAssetIds()
+            var dialog = pageStack.push(albumSelectorDialog)
+            dialog.accepted.connect(function() {
+                if (dialog.createNew) {
+                    // Album will be created, then we add assets in albumCreated handler
+                } else if (dialog.selectedAlbumId !== "") {
+                    immichApi.addAssetsToAlbum(dialog.selectedAlbumId, page.pendingAlbumAssetIds)
+                    timelineModel.clearSelection()
+                }
+            })
+        }
+        onClearSelection: timelineModel.clearSelection()
+        onDownload: {
+            var selectedIds = timelineModel.getSelectedAssetIds()
+            for (var i = 0; i < selectedIds.length; i++) {
+                immichApi.downloadAsset(selectedIds[i])
+            }
+            timelineModel.clearSelection()
+            notification.show(selectedIds.length === 1
+                //% "Downloading asset..."
+                ? qsTrId("timelinePage.downloadingAsset")
+                //% "Downloading %1 assets..."
+                : qsTrId("timelinePage.downloadingAssets").arg(selectedIds.length))
+        }
+        onDeleteSelected: {
+            var selectedIds = timelineModel.getSelectedAssetIds()
+            deleteRemorse.execute(selectedIds.length === 1
+                //% "Deleting asset"
+                ? qsTrId("timelinePage.deletingAsset")
+                //% "Deleting %1 assets"
+                : qsTrId("timelinePage.deletingAssets").arg(selectedIds.length), function() {
+                    immichApi.deleteAssets(selectedIds)
+                    timelineModel.clearSelection()
+            })
+        }
+    }
+
+    ScrollToTopButton {
+        targetFlickable: bucketsList
+        actionBarHeight: selectionActionBar.shown ? selectionActionBar.contentHeight : 0
+        forceHidden: selectionActionBar.activeMenuType !== ""
+    }
+
+    RemorsePopup {
+        id: deleteRemorse
+    }
+
+    Component {
+        id: albumSelectorDialog
+        AlbumSelectorDialog {}
+    }
+
+    // Scroll-to-asset state
+    property string pendingScrollAssetId: ""
+    property int pendingScrollBucketIndex: -1
+    property int pendingScrollAssetIndex: -1
+    property real pendingScrollLastTargetY: -1
+    property real pendingScrollLastBucketHeight: -1
+    property int pendingScrollStablePasses: 0
+    property int pendingScrollRetryCount: 0
+
+    function prepareScrollTarget(bucketIndex) {
+        bucketsList.positionViewAtIndex(bucketIndex, ListView.Beginning)
+        var targetItem = findBucketItem(bucketIndex)
+        if (!targetItem) return
+        if (!targetItem.dataLoaded) {
+            targetItem.loadBucketData()
+        }
+        if (!targetItem.assetsLoaded) {
+            targetItem.requestAssets()
+        }
+    }
+
+    function scrollToAssetPosition(bucketIndex, assetIndexInBucket) {
+        var targetItem = findBucketItem(bucketIndex)
+        if (!targetItem) {
+            bucketsList.positionViewAtIndex(bucketIndex, ListView.Beginning)
+            return { success: false }
+        }
+
+        if (assetIndexInBucket >= 0 && (!targetItem.assetsLoaded || !targetItem.bucketSubGroups)) {
+            return { success: false }
+        }
+
+        var bucketY = targetItem.y
+
+        // Add bucket header height
+        var assetOffsetY = Theme.itemSizeSmall
+
+        // Calculate exact Y offset within the bucket for the target asset
+        if (assetIndexInBucket >= 0 && targetItem.bucketSubGroups) {
+            var subGroups = targetItem.bucketSubGroups
+            var assetsSoFar = 0
+            for (var sg = 0; sg < subGroups.length; sg++) {
+                var subGroup = subGroups[sg]
+                var subGroupAssetCount = subGroup.assets ? subGroup.assets.length : 0
+
+                if (assetsSoFar + subGroupAssetCount > assetIndexInBucket) {
+                    // Target asset is in this subgroup
+                    assetOffsetY += Theme.itemSizeExtraSmall
+                    var indexInSubGroup = assetIndexInBucket - assetsSoFar
+                    var rowInSubGroup = Math.floor(indexInSubGroup / page.assetsPerRow)
+                    assetOffsetY += rowInSubGroup * page.cellSize
+                    assetOffsetY += page.cellSize / 2
+                    break
+                }
+
+                // Skip this entire subgroup
+                assetOffsetY += Theme.itemSizeExtraSmall
+                var rowsInSubGroup = Math.ceil(subGroupAssetCount / page.assetsPerRow)
+                assetOffsetY += rowsInSubGroup * page.cellSize
+                assetsSoFar += subGroupAssetCount
+            }
+        }
+
+        // Center the target asset on screen
+        var targetY = Math.max(0, Math.min(bucketY + assetOffsetY - bucketsList.height / 2, bucketsList.contentHeight - bucketsList.height))
+        if (Math.abs(bucketsList.contentY - targetY) > 2) {
+            bucketsList.contentY = targetY
+        }
+        return {
+            success: true,
+            targetY: targetY,
+            bucketHeight: targetItem.height
+        }
+    }
+
+    Connections {
+        target: pendingScrollBucketIndex >= 0 ? bucketsList : null
+        onContentHeightChanged: {
+            scrollFinalizeTimer.restart()
+        }
+    }
+
+    Connections {
+        target: pendingScrollBucketIndex >= 0 ? timelineModel : null
+        onBucketAssetsLoaded: {
+            if (bucketIndex === pendingScrollBucketIndex) {
+                scrollFinalizeTimer.restart()
+            }
+        }
+    }
+
+    // Finalize timer: waits for layout to settle and scrolls
+    Timer {
+        id: scrollFinalizeTimer
+        interval: 150
+        repeat: false
+        onTriggered: {
+            if (pendingScrollBucketIndex >= 0) {
+                prepareScrollTarget(pendingScrollBucketIndex)
+                var scrollResult = scrollToAssetPosition(pendingScrollBucketIndex, pendingScrollAssetIndex)
+                if (!scrollResult || typeof scrollResult !== "object" || !scrollResult.success) {
+                    pendingScrollRetryCount += 1
+                    if (pendingScrollRetryCount > 30) {
+                        resetPendingScrollState()
+                        return
+                    }
+                    scrollFinalizeTimer.restart()
+                    return
+                }
+
+                var targetY = scrollResult.targetY
+                var bucketHeight = scrollResult.bucketHeight
+                if (targetY === undefined || bucketHeight === undefined) {
+                    pendingScrollRetryCount += 1
+                    if (pendingScrollRetryCount > 30) {
+                        resetPendingScrollState()
+                        return
+                    }
+                    scrollFinalizeTimer.restart()
+                    return
+                }
+
+                var stableTarget = Math.abs(pendingScrollLastTargetY - targetY) <= 2
+                var stableHeight = Math.abs(pendingScrollLastBucketHeight - bucketHeight) <= 2
+
+                if (stableTarget && stableHeight) {
+                    pendingScrollStablePasses += 1
+                } else {
+                    pendingScrollStablePasses = 0
+                }
+
+                pendingScrollLastTargetY = targetY
+                pendingScrollLastBucketHeight = bucketHeight
+                pendingScrollRetryCount = 0
+
+                if (pendingScrollStablePasses < 1) {
+                    scrollFinalizeTimer.restart()
+                    return
+                }
+            }
+            // Highlight the target asset
+            if (pendingScrollAssetId !== "") {
+                highlightAssetId = pendingScrollAssetId
+                highlightClearTimer.restart()
+            }
+            // Clear pending state
+            resetPendingScrollState()
+        }
+    }
+
+    Timer {
+        id: highlightClearTimer
+        interval: 2500
+        repeat: false
+        onTriggered: highlightAssetId = ""
+    }
+
+    Connections {
+        target: timelineModel
+        onScrollToAssetRequested: {
+            pendingScrollAssetId = assetId
+            pendingScrollBucketIndex = bucketIndex
+            pendingScrollAssetIndex = assetIndexInBucket
+            pendingScrollLastTargetY = -1
+            pendingScrollLastBucketHeight = -1
+            pendingScrollStablePasses = 0
+            pendingScrollRetryCount = 0
+
+            if (timelineModel.isBucketLoaded(bucketIndex)) {
+                prepareScrollTarget(bucketIndex)
+                scrollFinalizeTimer.restart()
+            } else {
+                timelineModel.requestBucketLoad(bucketIndex)
+            }
+        }
+    }
+
+    Component.onCompleted: {
+        page.refresh()
+        page.memoriesLoading = true
+        immichApi.fetchMemories()
+    }
+
+    Connections {
+        target: immichApi
+        onTimelineBucketsReceived: {
+            timelineModel.setLoading(false)
+            if (pendingScrollBucketIndex < 0) {
+                bucketsList.positionViewAtBeginning()
+            }
+        }
+        onMemoriesReceived: {
+            page.memoriesLoading = false
+            if (page.memoriesBarItem) {
+                page.memoriesBarItem.loadMemories(memories)
+            } else {
+                page.pendingMemoriesData = memories
+            }
+        }
+        onErrorOccurred: {
+            timelineModel.setLoading(false)
+            notification.showError(error)
+        }
+        onAssetsDeleted: {
+            notification.show(assetIds.length === 1
+                //% "Deleted asset"
+                ? qsTrId("timelinePage.deletedAsset")
+                //% "Deleted %1 assets"
+                : qsTrId("timelinePage.deletedAssets").arg(assetIds.length))
+        }
+        onAssetDownloaded: {
+            //% "Downloaded to: %1"
+            notification.show(qsTrId("timelinePage.downloaded").arg(filePath))
+        }
+        onAssetsAddedToAlbum: {
+            timelineModel.clearSelection()
+            page.pendingAlbumAssetIds = []
+            //% "Added asset(s) to album"
+            notification.show(qsTrId("timelinePage.addedToAlbum"))
+        }
+        onFavoritesToggled: {
+            timelineModel.clearSelection()
+            notification.show(isFavorite ? (assetIds.length === 1
+                //% "Added asset to favorites"
+                ? qsTrId("timelinePage.addedAssetToFavorites")
+                //% "Added %1 assets to favorites"
+                : qsTrId("timelinePage.addedAssetsToFavorites").arg(assetIds.length)) : (assetIds.length === 1
+                //% "Removed asset from favorites"
+                ? qsTrId("timelinePage.removedAssetFromFavorites")
+                //% "Removed %1 assets from favorites"
+                : qsTrId("timelinePage.removedAssetsFromFavorites").arg(assetIds.length)))
+        }
+        onAlbumCreated: {
+            // After album is created, add pending assets to it
+            if (page.pendingAlbumAssetIds.length > 0) {
+                immichApi.addAssetsToAlbum(albumId, page.pendingAlbumAssetIds)
+            }
+            //% "Created album: %1"
+            notification.show(qsTrId("timelinePage.createdAlbum").arg(albumName))
+            // Refresh albums list
+            immichApi.fetchAlbums()
+        }
+        onUploadAllComplete: {
+            if (successCount > 0) {
+                page.refresh()
+            }
+        }
+        onStackCreated: {
+            //% "Stack created"
+            notification.show(qsTrId("timelinePage.stackCreated"))
+            page.refresh()
+        }
+        onStackDeleted: {
+            //% "Stack removed"
+            notification.show(qsTrId("timelinePage.stackDeleted"))
+            page.refresh()
+        }
+    }
+
+    NotificationBanner {
+        id: notification
+        anchors.bottom: parent.bottom
+    }
 }

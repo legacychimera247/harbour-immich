@@ -35,7 +35,7 @@ Dialog {
    }
 
    // Internal selection state
-   property var _selectedSet: {
+   property var selectedSet: {
        var set = {}
        for (var i = 0; i < selectedPeople.length; i++) {
            set[selectedPeople[i]] = true
@@ -140,7 +140,7 @@ Dialog {
                        width: peopleGrid.itemSize
                        height: peopleGrid.itemSize + Theme.paddingMedium + Theme.fontSizeTiny
 
-                       property bool isSelected: peoplePickerDialog._selectedSet[modelData.personId] === true
+                       property bool isSelected: peoplePickerDialog.selectedSet[modelData.personId] === true
 
                        Column {
                            anchors.fill: parent

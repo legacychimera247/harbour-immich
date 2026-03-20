@@ -538,7 +538,8 @@ Page {
                                                       videoId: modelData.id,
                                                       isFavorite: isFavorite,
                                                       currentIndex: modelData.assetIndex,
-                                                      albumAssets: navAssets
+                                                      albumAssets: navAssets,
+                                                      albumId: page.albumId
                                                   })
                                               } else {
                                                   pageStack.push(Qt.resolvedUrl("AssetDetailPage.qml"), {
@@ -547,7 +548,8 @@ Page {
                                                       isVideo: modelData.isVideo,
                                                       thumbhash: modelData.thumbhash || "",
                                                       currentIndex: modelData.assetIndex,
-                                                      albumAssets: navAssets
+                                                      albumAssets: navAssets,
+                                                      albumId: page.albumId
                                                   })
                                               }
                                           }
@@ -633,6 +635,12 @@ Page {
                //% "Deleted %1 assets"
                : qsTrId("albumDetailPage.deletedAssets").arg(assetIds.length))
       }
+
+      onAssetsRemovedFromAlbum: {
+          if (albumId === page.albumId) {
+              immichApi.fetchAlbumDetails(page.albumId)
+          }
+      }
   }
 
   // Selection Action Bar
@@ -690,7 +698,7 @@ Page {
   ScrollToTopButton {
       targetFlickable: flickable
       actionBarHeight: selectionActionBar.visible ? selectionActionBar.contentHeight : 0
-      forceHidden: selectionActionBar.menuOpen
+      forceHidden: selectionActionBar.activeMenuType !== ""
   }
 
   NotificationBanner {

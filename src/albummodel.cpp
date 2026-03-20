@@ -119,3 +119,17 @@ void AlbumModel::sortAlbums(const QString &field, bool ascending)
 
     endResetModel();
 }
+
+void AlbumModel::updateAlbumMetadata(const QString &albumId, const QString &albumName, const QString &albumThumbnailAssetId)
+{
+    for (int i = 0; i < m_albums.size(); ++i) {
+        Album &album = m_albums[i];
+        if (album.id != albumId)
+            continue;
+
+        album.albumName = albumName;
+        album.albumThumbnailAssetId = albumThumbnailAssetId;
+        emit dataChanged(index(i), index(i));
+        return;
+    }
+}

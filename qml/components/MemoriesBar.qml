@@ -4,15 +4,16 @@ import Sailfish.Silica 1.0
 Item {
    id: memoriesBar
    width: parent.width
-   height: memoriesModel.count > 0 && memoriesLoaded ? memoriesList.height + Theme.paddingMedium * 2 : 0
-   visible: memoriesModel.count > 0 && memoriesLoaded
+   height: hasMemories ? memoriesList.height + Theme.paddingMedium * 2 : 0
+   visible: hasMemories
 
+   property bool hasMemories: memoriesModel.count > 0 && memoriesLoaded
    property bool loading: false
    property bool memoriesLoaded: false
 
    property int thumbnailSize: settingsManager.memoriesThumbnailSize
    property int baseSize: Math.min(Screen.width, Screen.height)
-   property int itemSize: thumbnailSize == 0 ? Math.floor(baseSize / 5) : (thumbnailSize == 1 ? Math.floor(baseSize / 4) : (thumbnailSize == 2 ? Math.floor(baseSize / 3) : Math.floor(baseSize / 2)))
+   property int itemSize: thumbnailSize == 0 ? Math.floor(baseSize / 4) : thumbnailSize == 1 ? Math.floor(baseSize / 3) : Math.floor(baseSize / 2)
 
    ListModel {
        id: memoriesModel
@@ -68,7 +69,7 @@ Item {
        spacing: Theme.paddingMedium
        leftMargin: Theme.horizontalPageMargin
        rightMargin: Theme.horizontalPageMargin
-       cacheBuffer: 256  // Limit cache to prevent memory issues
+       cacheBuffer: 256
 
        model: memoriesModel
 

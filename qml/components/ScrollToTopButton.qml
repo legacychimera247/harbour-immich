@@ -12,7 +12,7 @@ MouseArea {
     height: Theme.itemSizeMedium
     z: 10
 
-    visible: !forceHidden && targetFlickable && targetFlickable.contentY > Theme.itemSizeLarge
+    visible: !forceHidden && targetFlickable && (targetFlickable.contentY - targetFlickable.originY) > Theme.itemSizeLarge
     opacity: pressed ? 0.6 : 0.85
 
     Behavior on opacity {
@@ -68,7 +68,15 @@ MouseArea {
 
     onClicked: {
         if (targetFlickable) {
-            targetFlickable.scrollToTop()
+            if (targetFlickable.cancelFlick()) {
+                targetFlickable.cancelFlick()
+            }
+            if (targetFlickable.positionViewAtBeginning()) {
+                targetFlickable.positionViewAtBeginning()
+            } else if (targetFlickable.scrollToTop()) {
+                targetFlickable.scrollToTop()
+            }
+            targetFlickable.contentY = targetFlickable.originY
         }
     }
 

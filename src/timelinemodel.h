@@ -4,7 +4,9 @@
 #include <QAbstractListModel>
 #include <QJsonArray>
 #include <QDateTime>
+#include <QVariantList>
 #include <QSet>
+#include <QQueue>
 
 struct TimelineAsset {
    QString id;
@@ -13,6 +15,8 @@ struct TimelineAsset {
    QDateTime createdAt;
    QString thumbhash;
    QString duration;
+   QString stackId;
+   int stackAssetCount;
 };
 
 struct TimelineBucket {
@@ -24,6 +28,8 @@ struct TimelineBucket {
    bool loaded;             // Whether assets have been fetched
    bool loading;            // Whether assets are currently being fetched
    QList<TimelineAsset> assets;
+   mutable QVariantList cachedSubGroups;
+   mutable bool subGroupsDirty;
 };
 
 class TimelineModel : public QAbstractListModel
@@ -44,7 +50,9 @@ public:
        IsGroupHeaderRole,
        GroupTitleRole,
        GroupSubtitleRole,
-       GroupIndexRole
+       GroupIndexRole,
+       StackIdRole,
+       StackAssetCountRole
    };
 
    explicit TimelineModel(QObject *parent = nullptr);
@@ -71,6 +79,7 @@ public:
    Q_INVOKABLE bool isAssetSelected(const QString &assetId) const;
    Q_INVOKABLE bool areAllSelectedFavorites() const;
    Q_INVOKABLE bool areAnySelectedFavorites() const;
+   Q_INVOKABLE bool isAnySelectedAStack() const;
 
    // Asset updates
    Q_INVOKABLE void updateFavorites(const QStringList &assetIds, bool isFavorite);
@@ -78,6 +87,7 @@ public:
    Q_INVOKABLE void scrollToAsset(const QString &assetId, const QString &dateString);
 
    Q_INVOKABLE QVariantMap getAssetByAssetIndex(int assetIndex) const;
+   Q_INVOKABLE QVariantMap getAssetLocation(int assetIndex) const;
    Q_INVOKABLE int getAssetIndexById(const QString &assetId) const;
 
    // Properties
@@ -103,22 +113,36 @@ signals:
    void bucketCountChanged();
    void favoriteFilterChanged();
    void bucketLoadRequested(const QString &timeBucket, bool isFavorite);
-   void bucketDataUpdated();
+   void bucketDataUpdated(int bucketIndex);
    void assetMetadataRequested(const QString &assetId);
-   void scrollToAssetRequested(const QString &assetId, int bucketIndex);
+   void scrollToAssetRequested(const QString &assetId, int bucketIndex, int assetIndexInBucket);
+   void bucketAssetsLoaded(int bucketIndex);
 
 private:
    QList<TimelineBucket> m_buckets;
    QSet<QString> m_selectedIds;
    QHash<QString, QPair<int, int>> m_assetIndex; // assetId -> (bucketIndex, assetIndex)
    QHash<QString, int> m_bucketIndex; // timeBucket -> index in m_buckets
+   QList<int> m_bucketOffsets;
    int m_totalCount;
    bool m_loading;
    QString m_serverUrl;
    bool m_isFavoriteFilter;
 
    void rebuildAssetIndex();
+   void rebuildBucketOffsets();
+   int findBucketByAssetIndex(int assetIndex) const;
    int findBucketByTimeBucket(const QString &timeBucket) const;
+   int findClosestBucketByDate(const QDateTime &date) const;
+   void resolvePendingScroll(int bucketIndex);
+   void dispatchBucketLoad(int bucketIndex);
+   void processQueuedBucketLoads();
+
+   // Pending scroll state
+   QString m_pendingScrollAssetId;
+   int m_pendingScrollBucketIndex;
+   QQueue<int> m_bucketLoadQueue;
+   int m_activeBucketLoads;
 };
 
 #endif

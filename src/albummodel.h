@@ -43,6 +43,7 @@ public:
 
     Q_INVOKABLE void loadAlbums(const QJsonArray &albumsJson);
     Q_INVOKABLE void sortAlbums(const QString &field, bool ascending);
+    Q_INVOKABLE void updateAlbumMetadata(const QString &albumId, const QString &albumName, const QString &albumThumbnailAssetId);
 
 private:
     QList<Album> m_albums;

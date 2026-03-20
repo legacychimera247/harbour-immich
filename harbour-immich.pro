@@ -31,8 +31,14 @@ HEADERS += \
     src/thumbhashprovider.h \
     src/timelinemodel.h
 
+icons.files = icons/cover-icon.png
+icons.path = $$PREFIX/share/$${TARGET}/icons
+INSTALLS += icons
+
 DISTFILES += qml/harbour-immich.qml \
+    qml/components/AlbumSelectorDialog.qml \
     qml/components/AssetGridItem.qml \
+    qml/components/DismissDragBackdrop.qml \
     qml/components/FilterablePickerDialog.qml \
     qml/components/MemoriesBar.qml \
     qml/components/NotificationBanner.qml \
@@ -40,12 +46,16 @@ DISTFILES += qml/harbour-immich.qml \
     qml/components/QRCode.qml \
     qml/components/ScrollToTopButton.qml \
     qml/components/SelectionActionBar.qml \
+    qml/components/TimelineBucketDelegate.qml \
+    qml/components/TimelineFilterBar.qml \
+    qml/components/ZoomSwipeArea.qml \
     qml/cover/CoverPage.qml \
     qml/pages/AlbumInfoPage.qml \
     qml/pages/AlbumPickerPage.qml \
     qml/pages/AssetDetailPage.qml \
     qml/pages/AssetInfoPage.qml \
     qml/pages/EditAlbumDialog.qml \
+    qml/pages/EditAlbumUsersDialog.qml \
     qml/pages/EditAssetDialog.qml \
     qml/pages/LogViewerPage.qml \
     qml/pages/MemoryDetailPage.qml \
@@ -59,9 +69,10 @@ DISTFILES += qml/harbour-immich.qml \
     qml/pages/SettingsPage.qml \
     qml/pages/SharePage.qml \
     qml/pages/ShareResultPage.qml \
+    qml/pages/StackDetailPage.qml \
     qml/pages/TimelinePage.qml \
-    qml/pages/UserPickerPage.qml \
     qml/pages/VideoPlayerPage.qml \
+    icons/cover-icon.png \
     rpm/harbour-immich.changes.in \
     rpm/harbour-immich.changes.run.in \
     rpm/harbour-immich.spec \

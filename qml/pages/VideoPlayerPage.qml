@@ -77,13 +77,49 @@ Page {
                        //% "Add to favorites"
                      : qsTrId("videoPlayerPage.addToFavorites")
                onClicked: {
+                   hapticFeedback.play()
                    immichApi.toggleFavorite([videoId], !isFavorite)
                }
            }
        }
    }
 
-   // Video player and controls - outside flickable for proper positioning
+   property bool controlsVisible: true
+
+   function toggleControls() {
+       if (controlsVisible) {
+           controlsVisible = false
+           controlsHideTimer.stop()
+       } else {
+           controlsVisible = true
+           if (videoPlayer.playbackState === MediaPlayer.PlayingState) {
+               controlsHideTimer.restart()
+           }
+       }
+   }
+
+   function togglePlayback() {
+       if (videoPlayer.playbackState === MediaPlayer.PlayingState) {
+           videoPlayer.pause()
+           controlsVisible = true
+           controlsHideTimer.stop()
+       } else {
+           videoPlayer.play()
+           controlsHideTimer.restart()
+       }
+   }
+
+   Timer {
+       id: controlsHideTimer
+       interval: 4000
+       onTriggered: {
+           if (videoPlayer.playbackState === MediaPlayer.PlayingState) {
+               controlsVisible = false
+           }
+       }
+   }
+
+   // Video player
    Rectangle {
        anchors.fill: parent
        color: "black"
@@ -92,45 +128,34 @@ Page {
        Video {
            id: videoPlayer
            anchors.fill: parent
-           source: videoId ? "image://immich/original/" + videoId : ""
            autoPlay: false
-
-           MouseArea {
-               anchors.fill: parent
-               onClicked: {
-                   if (videoPlayer.playbackState === MediaPlayer.PlayingState) {
-                       videoPlayer.pause()
-                   } else {
-                       videoPlayer.play()
-                   }
-               }
-           }
        }
 
-       // Play/Pause overlay
+       // Tap area for toggling controls
+       MouseArea {
+           anchors.fill: parent
+           onClicked: toggleControls()
+       }
+
+       // Play/Pause center overlay
        Rectangle {
            anchors.centerIn: parent
-           width: Theme.itemSizeHuge
-           height: Theme.itemSizeHuge
+           width: Theme.itemSizeExtraLarge
+           height: Theme.itemSizeExtraLarge
            radius: width / 2
-           color: Theme.rgba(Theme.highlightBackgroundColor, 0.5)
-           visible: videoPlayer.playbackState !== MediaPlayer.PlayingState || !controlsHideTimer.running
+           color: Theme.rgba("black", 0.4)
+           visible: controlsVisible
+           opacity: controlsVisible ? 1.0 : 0.0
+           Behavior on opacity { FadeAnimation { duration: 200 } }
 
            Image {
                anchors.centerIn: parent
-               source: videoPlayer.playbackState === MediaPlayer.PlayingState ? "image://theme/icon-m-pause" : "image://theme/icon-m-play"
+               source: videoPlayer.playbackState === MediaPlayer.PlayingState ? "image://theme/icon-l-pause" : "image://theme/icon-l-play"
            }
 
            MouseArea {
                anchors.fill: parent
-               onClicked: {
-                   if (videoPlayer.playbackState === MediaPlayer.PlayingState) {
-                       videoPlayer.pause()
-                   } else {
-                       videoPlayer.play()
-                       controlsHideTimer.restart()
-                   }
-               }
+               onClicked: togglePlayback()
            }
        }
 
@@ -138,103 +163,145 @@ Page {
        Rectangle {
            id: controlsBar
            anchors.bottom: parent.bottom
-           width: parent.width
-           height: controlsColumn.height + Theme.paddingLarge * 2
-           color: Theme.rgba(Theme.highlightDimmerColor, 0.8)
-           visible: videoPlayer.playbackState !== MediaPlayer.PlayingState || !controlsHideTimer.running
+           anchors.left: parent.left
+           anchors.right: parent.right
+           height: controlsContent.height + Theme.paddingMedium * 2
+           color: Theme.rgba("black", 0.6)
+           visible: controlsVisible
+           opacity: controlsVisible ? 1.0 : 0.0
+           Behavior on opacity { FadeAnimation { duration: 200 } }
+
+           // Gradient top edge
+           Rectangle {
+               anchors.bottom: parent.top
+               anchors.left: parent.left
+               anchors.right: parent.right
+               height: Theme.paddingLarge * 2
+               gradient: Gradient {
+                   GradientStop { position: 0.0; color: "transparent" }
+                   GradientStop { position: 1.0; color: Theme.rgba("black", 0.6) }
+               }
+           }
 
            Column {
-               id: controlsColumn
+               id: controlsContent
                anchors.left: parent.left
                anchors.right: parent.right
                anchors.bottom: parent.bottom
-               anchors.margins: Theme.paddingLarge
+               anchors.bottomMargin: Theme.paddingMedium
                spacing: Theme.paddingSmall
 
-               Slider {
-                   id: progressSlider
-                   width: parent.width
-                   minimumValue: 0
-                   maximumValue: Math.max(1, videoPlayer.duration)
-                   value: videoPlayer.position
-                   enabled: videoPlayer.seekable
-                   handleVisible: false
-
-                   onReleased: {
-                       videoPlayer.seek(value)
-                   }
+               // Time row: [position] [slider] [duration]
+               Row {
+                   anchors.left: parent.left
+                   anchors.right: parent.right
+                   anchors.leftMargin: Theme.horizontalPageMargin
+                   anchors.rightMargin: Theme.horizontalPageMargin
+                   spacing: Theme.paddingSmall
 
                    Label {
-                       anchors.left: parent.left
-                       anchors.bottom: parent.top
-                       anchors.bottomMargin: Theme.paddingSmall
+                       id: positionLabel
+                       width: Math.max(implicitWidth, Theme.itemSizeSmall)
+                       anchors.verticalCenter: parent.verticalCenter
                        text: formatTime(videoPlayer.position)
-                       font.pixelSize: Theme.fontSizeSmall
+                       font.pixelSize: Theme.fontSizeExtraSmall
                        color: Theme.primaryColor
+                       horizontalAlignment: Text.AlignRight
+                   }
+
+                   Slider {
+                       id: progressSlider
+                       width: parent.width - positionLabel.width - durationLabel.width - Theme.paddingSmall * 2
+                       anchors.verticalCenter: parent.verticalCenter
+                       minimumValue: 0
+                       maximumValue: Math.max(1, videoPlayer.duration)
+                       value: videoPlayer.position
+                       enabled: videoPlayer.seekable
+                       handleVisible: true
+
+                       property bool userDragging: false
+
+                       onPressed: {
+                           userDragging = true
+                           controlsHideTimer.stop()
+                       }
+
+                       onReleased: {
+                           userDragging = false
+                           videoPlayer.seek(value)
+                           if (videoPlayer.playbackState === MediaPlayer.PlayingState) {
+                               controlsHideTimer.restart()
+                           }
+                       }
                    }
 
                    Label {
-                       anchors.right: parent.right
-                       anchors.bottom: parent.top
-                       anchors.bottomMargin: Theme.paddingSmall
+                       id: durationLabel
+                       width: Math.max(implicitWidth, Theme.itemSizeSmall)
+                       anchors.verticalCenter: parent.verticalCenter
                        text: formatTime(videoPlayer.duration)
-                       font.pixelSize: Theme.fontSizeSmall
-                       color: Theme.primaryColor
+                       font.pixelSize: Theme.fontSizeExtraSmall
+                       color: Theme.secondaryColor
                    }
                }
 
+               // Playback controls row
                Row {
                    anchors.horizontalCenter: parent.horizontalCenter
-                   spacing: Theme.paddingLarge
+                   spacing: Theme.paddingLarge * 2
 
                    IconButton {
                        icon.source: "image://theme/icon-m-10s-back"
                        onClicked: {
                            videoPlayer.seek(Math.max(0, videoPlayer.position - 10000))
+                           controlsHideTimer.restart()
                        }
                    }
 
                    IconButton {
                        icon.source: videoPlayer.playbackState === MediaPlayer.PlayingState ? "image://theme/icon-m-pause" : "image://theme/icon-m-play"
-                       onClicked: {
-                           if (videoPlayer.playbackState === MediaPlayer.PlayingState) {
-                               videoPlayer.pause()
-                           } else {
-                               videoPlayer.play()
-                               controlsHideTimer.restart()
-                           }
-                       }
+                       onClicked: togglePlayback()
                    }
 
                    IconButton {
                        icon.source: "image://theme/icon-m-10s-forward"
                        onClicked: {
                            videoPlayer.seek(Math.min(videoPlayer.duration, videoPlayer.position + 10000))
+                           controlsHideTimer.restart()
                        }
                    }
                }
            }
        }
 
-       Timer {
-           id: controlsHideTimer
-           interval: 3000
-           running: false
-       }
-
+       // Loading indicator
        BusyIndicator {
            anchors.centerIn: parent
            running: videoPlayer.status === MediaPlayer.Loading || videoPlayer.status === MediaPlayer.Buffering
            size: BusyIndicatorSize.Large
        }
 
-       Label {
+       // Error state
+       Column {
            anchors.centerIn: parent
+           spacing: Theme.paddingMedium
            visible: videoPlayer.status === MediaPlayer.InvalidMedia || videoPlayer.status === MediaPlayer.UnknownStatus
-           //% "Failed to load video"
-           text: qsTrId("videoPlayerPage.failed")
-           color: Theme.highlightColor
-           font.pixelSize: Theme.fontSizeLarge
+
+           Icon {
+               anchors.horizontalCenter: parent.horizontalCenter
+               source: "image://theme/icon-m-video"
+               width: Theme.iconSizeLarge
+               height: Theme.iconSizeLarge
+               opacity: 0.5
+           }
+
+           Label {
+               anchors.horizontalCenter: parent.horizontalCenter
+               //% "Failed to load video"
+               text: qsTrId("videoPlayerPage.failed")
+               color: Theme.highlightColor
+               font.pixelSize: Theme.fontSizeMedium
+           }
        }
    }
 
@@ -282,6 +349,7 @@ Page {
 
    Component.onCompleted: {
        immichApi.getAssetInfo(videoId)
+       immichApi.setVideoSource(videoPlayer, videoId)
        videoPlayer.play()
        controlsHideTimer.start()
    }

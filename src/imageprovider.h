@@ -9,6 +9,7 @@
 #include <QMutex>
 #include <QQueue>
 #include <QAtomicInt>
+#include <QCache>
 
 class AuthManager;
 class SettingsManager;
@@ -24,7 +25,6 @@ public:
     void cancel() override;
 
     void startRequest(); // Called when slot becomes available
-    bool isStarted() const { return m_started; }
 
 private slots:
     void onFinished();
@@ -39,11 +39,21 @@ private:
     QString m_errorString;
     bool m_cancelled;
     bool m_started;
+    bool m_finished;
+    bool m_networkActive;
 
     static QAtomicInt s_activeRequests;
-    static const int MAX_CONCURRENT_REQUESTS = 12; // Limit concurrent loads
+    static const int MAX_CONCURRENT_REQUESTS = 8;
 
     static void requestCompleted();
+    static void enqueueOrStart(ImmichImageResponse *response);
+    static void processQueue();
+    static QMutex s_queueMutex;
+    static QQueue<ImmichImageResponse*> s_pendingQueue;
+
+    // In-memory thumbnail cache to avoid re-fetching on bucket reload
+    static QMutex s_cacheMutex;
+    static QCache<QString, QImage> s_imageCache;
 };
 
 class ImmichImageProvider: public QQuickAsyncImageProvider {

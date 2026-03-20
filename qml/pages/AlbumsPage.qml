@@ -190,9 +190,7 @@ Page {
                           Rectangle {
                               anchors.fill: parent
                               radius: Theme.paddingSmall
-                              color: page.activeFilter === modelData.id ?
-                                     Theme.rgba(Theme.highlightBackgroundColor, 0.4) :
-                                     Theme.rgba(Theme.highlightBackgroundColor, 0.1)
+                              color: page.activeFilter === modelData.id ? Theme.rgba(Theme.highlightBackgroundColor, 0.4) : Theme.rgba(Theme.highlightBackgroundColor, 0.1)
                               border.width: page.activeFilter === modelData.id ? 1 : 0
                               border.color: Theme.highlightColor
                           }
@@ -367,10 +365,20 @@ Page {
       targetFlickable: listView
   }
 
+  Timer {
+      id: scrollToTopTimer
+      interval: 1
+      onTriggered: listView.positionViewAtBeginning()
+  }
+
   Connections {
       target: immichApi
       onAlbumsReceived: {
           page.applySorting()
+          scrollToTopTimer.restart()
+      }
+      onAlbumUpdated: {
+          albumModel.updateAlbumMetadata(albumId, albumName, albumThumbnailAssetId)
       }
   }
 

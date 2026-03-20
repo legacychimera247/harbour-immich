@@ -75,39 +75,39 @@ Page {
             SectionHeader {
                 //% "EXIF Information"
                 text: qsTrId("assetInfoPage.exifInformation")
-                visible: assetInfo && assetInfo.exifInfo
+                visible: !!(assetInfo && assetInfo.exifInfo)
             }
 
             DetailItem {
-                visible: assetInfo && assetInfo.exifInfo && assetInfo.exifInfo.make
+                visible: !!(assetInfo && assetInfo.exifInfo && assetInfo.exifInfo.make)
                 //% "Camera"
                 label: qsTrId("assetInfoPage.camera")
                 value: assetInfo && assetInfo.exifInfo ? (assetInfo.exifInfo.make + " " + assetInfo.exifInfo.model) : ""
             }
 
             DetailItem {
-                visible: assetInfo && assetInfo.exifInfo && assetInfo.exifInfo.fNumber
+                visible: !!(assetInfo && assetInfo.exifInfo && assetInfo.exifInfo.fNumber)
                 //% "Aperture"
                 label: qsTrId("assetInfoPage.aperture")
                 value: assetInfo && assetInfo.exifInfo ? "f/" + assetInfo.exifInfo.fNumber : ""
             }
 
             DetailItem {
-                visible: assetInfo && assetInfo.exifInfo && assetInfo.exifInfo.exposureTime
+                visible: !!(assetInfo && assetInfo.exifInfo && assetInfo.exifInfo.exposureTime)
                 //% "Exposure time"
                 label: qsTrId("assetInfoPage.exposureTime")
                 value: assetInfo && assetInfo.exifInfo ? assetInfo.exifInfo.exposureTime + "s" : ""
             }
 
             DetailItem {
-                visible: assetInfo && assetInfo.exifInfo && assetInfo.exifInfo.iso
+                visible: !!(assetInfo && assetInfo.exifInfo && assetInfo.exifInfo.iso)
                 //% "ISO"
                 label: qsTrId("assetInfoPage.iso")
                 value: assetInfo && assetInfo.exifInfo ? assetInfo.exifInfo.iso : ""
             }
 
             DetailItem {
-                visible: assetInfo && assetInfo.exifInfo && assetInfo.exifInfo.focalLength
+                visible: !!(assetInfo && assetInfo.exifInfo && assetInfo.exifInfo.focalLength)
                 //% "Focal length"
                 label: qsTrId("assetInfoPage.focalLength")
                 value: assetInfo && assetInfo.exifInfo ? assetInfo.exifInfo.focalLength + "mm" : ""
@@ -116,13 +116,13 @@ Page {
             SectionHeader {
                 //% "People"
                 text: qsTrId("assetInfoPage.people")
-                visible: assetInfo && assetInfo.people && assetInfo.people.length > 0
+                visible: !!(assetInfo && assetInfo.people && assetInfo.people.length > 0)
             }
 
             Item {
                 width: parent.width
                 height: peopleFlow.height
-                visible: assetInfo && assetInfo.people && assetInfo.people.length > 0
+                visible: !!(assetInfo && assetInfo.people && assetInfo.people.length > 0)
 
                 Flow {
                     id: peopleFlow
@@ -212,33 +212,32 @@ Page {
             SectionHeader {
                 //% "Location"
                 text: qsTrId("assetInfoPage.location")
-                visible: assetInfo && assetInfo.exifInfo && assetInfo.exifInfo.latitude
+                visible: !!(assetInfo && assetInfo.exifInfo && assetInfo.exifInfo.latitude)
             }
 
             DetailItem {
-                visible: assetInfo && assetInfo.exifInfo && assetInfo.exifInfo.latitude
+                visible: !!(assetInfo && assetInfo.exifInfo && assetInfo.exifInfo.latitude)
                 //% "Coordinates"
                 label: qsTrId("assetInfoPage.coordinates")
-                value: assetInfo && assetInfo.exifInfo ?
-                    assetInfo.exifInfo.latitude.toFixed(6) + ", " + assetInfo.exifInfo.longitude.toFixed(6) : ""
+                value: assetInfo && assetInfo.exifInfo ? assetInfo.exifInfo.latitude.toFixed(6) + ", " + assetInfo.exifInfo.longitude.toFixed(6) : ""
             }
 
             DetailItem {
-                visible: assetInfo && assetInfo.exifInfo && assetInfo.exifInfo.city
+                visible: !!(assetInfo && assetInfo.exifInfo && assetInfo.exifInfo.city)
                 //% "City"
                 label: qsTrId("assetInfoPage.city")
                 value: assetInfo && assetInfo.exifInfo ? assetInfo.exifInfo.city : ""
             }
 
             DetailItem {
-                visible: assetInfo && assetInfo.exifInfo && assetInfo.exifInfo.country
+                visible: !!(assetInfo && assetInfo.exifInfo && assetInfo.exifInfo.country)
                 //% "Country"
                 label: qsTrId("assetInfoPage.country")
                 value: assetInfo && assetInfo.exifInfo ? assetInfo.exifInfo.country : ""
             }
 
             Button {
-                visible: assetInfo && assetInfo.exifInfo && assetInfo.exifInfo.latitude
+                visible: !!(assetInfo && assetInfo.exifInfo && assetInfo.exifInfo.latitude)
                 anchors.horizontalCenter: parent.horizontalCenter
                 //% "Open in Maps"
                 text: qsTrId("assetInfoPage.openInMaps")

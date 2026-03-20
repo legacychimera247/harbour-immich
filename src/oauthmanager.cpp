@@ -73,7 +73,7 @@ void OAuthManager::checkOAuthAvailability(const QString &serverUrl)
    m_serverUrl = serverUrl;
    setOAuthEnabled(false);
 
-   QUrl url(serverUrl + "/api/oauth/authorize");
+   QUrl url(serverUrl + QStringLiteral("/api/oauth/authorize"));
    QNetworkRequest request(url);
    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
@@ -111,9 +111,10 @@ void OAuthManager::startOAuthLogin(const QString &serverUrl)
    m_serverUrl = serverUrl;
    setBusy(true);
 
-   QUrl url(serverUrl + "/api/oauth/authorize");
+   QUrl url(serverUrl + QStringLiteral("/api/oauth/authorize"));
    QNetworkRequest request(url);
    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+   request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
 
    QJsonObject json;
    json["redirectUri"] = redirectUri();
@@ -181,7 +182,7 @@ void OAuthManager::onAuthorizeReplyFinished()
 
 void OAuthManager::handleOAuthCallback(const QString &callbackUrl)
 {
-   QUrl url(m_serverUrl + "/api/oauth/callback");
+   QUrl url(m_serverUrl + QStringLiteral("/api/oauth/callback"));
    QNetworkRequest request(url);
    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
