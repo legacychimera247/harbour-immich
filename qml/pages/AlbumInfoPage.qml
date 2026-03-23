@@ -27,17 +27,6 @@ Page {
                    })
                }
            }
-
-           MenuItem {
-               //% "Edit users"
-               text: qsTrId("albumInfoPage.editUsers")
-               onClicked: {
-                   pageStack.push(Qt.resolvedUrl("EditAlbumUsersDialog.qml"), {
-                       albumId: page.albumId,
-                       albumInfo: page.albumInfo
-                   })
-               }
-           }
        }
 
        Column {

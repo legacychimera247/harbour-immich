@@ -14,9 +14,6 @@ Page {
     property string activeFilter: "all"  // all, favorites
     property string sortOrder: "desc"    // desc, asc
 
-    // Album selector state
-    property var pendingAlbumAssetIds: []
-
     // Highlight state for scroll-to-asset
     property string highlightAssetId: ""
     property var memoriesBarItem: null
@@ -295,7 +292,7 @@ Page {
         selectedCount: timelineModel.selectedCount
         allAreFavorites: timelineModel.selectedCount > 0 && timelineModel.areAllSelectedFavorites()
         hasAnyFavorites: timelineModel.selectedCount > 0 && timelineModel.areAnySelectedFavorites()
-        canStack: timelineModel.selectedCount > 0 && !timelineModel.isAnySelectedAStack()
+        canStack: timelineModel.selectedCount > 1 && !timelineModel.isAnySelectedAStack()
 
         onStackSelected: {
             var selectedIds = timelineModel.getSelectedAssetIds()
@@ -317,15 +314,11 @@ Page {
             })
         }
         onAddToAlbum: {
-            page.pendingAlbumAssetIds = timelineModel.getSelectedAssetIds()
-            var dialog = pageStack.push(albumSelectorDialog)
+            var dialog = pageStack.push(Qt.resolvedUrl("AlbumPickerPage.qml"), {
+                assetIds: timelineModel.getSelectedAssetIds()
+            })
             dialog.accepted.connect(function() {
-                if (dialog.createNew) {
-                    // Album will be created, then we add assets in albumCreated handler
-                } else if (dialog.selectedAlbumId !== "") {
-                    immichApi.addAssetsToAlbum(dialog.selectedAlbumId, page.pendingAlbumAssetIds)
-                    timelineModel.clearSelection()
-                }
+                timelineModel.clearSelection()
             })
         }
         onClearSelection: timelineModel.clearSelection()
@@ -362,11 +355,6 @@ Page {
 
     RemorsePopup {
         id: deleteRemorse
-    }
-
-    Component {
-        id: albumSelectorDialog
-        AlbumSelectorDialog {}
     }
 
     // Scroll-to-asset state
@@ -585,7 +573,6 @@ Page {
         }
         onAssetsAddedToAlbum: {
             timelineModel.clearSelection()
-            page.pendingAlbumAssetIds = []
             //% "Added asset(s) to album"
             notification.show(qsTrId("timelinePage.addedToAlbum"))
         }
@@ -602,10 +589,6 @@ Page {
                 : qsTrId("timelinePage.removedAssetsFromFavorites").arg(assetIds.length)))
         }
         onAlbumCreated: {
-            // After album is created, add pending assets to it
-            if (page.pendingAlbumAssetIds.length > 0) {
-                immichApi.addAssetsToAlbum(albumId, page.pendingAlbumAssetIds)
-            }
             //% "Created album: %1"
             notification.show(qsTrId("timelinePage.createdAlbum").arg(albumName))
             // Refresh albums list

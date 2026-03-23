@@ -333,15 +333,16 @@ QString ImmichApi::serverUrl() const
    return m_authManager->serverUrl();
 }
 
-void ImmichApi::createSharedLink(const QString &type, const QVariant &ids, const QString &password, const QString &expiresAt, bool allowDownload, bool allowUpload)
+void ImmichApi::createSharedLink(const QString &type, const QVariant &ids, const QString &password, const QString &expiresAt, bool allowDownload, bool allowUpload, bool showMetadata, const QString &description, const QString &slug)
 {
    QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/shared-links"));
    QNetworkRequest request = createAuthenticatedRequest(url);
 
    QJsonObject json;
    json["type"] = type;
-   json["allowDownload"] = allowDownload;
+   json["allowDownload"] = showMetadata ? allowDownload : false;
    json["allowUpload"] = allowUpload;
+   json["showMetadata"] = showMetadata;
 
    if (type == "ALBUM") {
        // For album sharing, ids is a single albumId string
@@ -363,6 +364,14 @@ void ImmichApi::createSharedLink(const QString &type, const QVariant &ids, const
 
    if (!expiresAt.isEmpty()) {
        json["expiresAt"] = expiresAt;
+   }
+
+   if (!description.isEmpty()) {
+       json["description"] = description;
+   }
+
+   if (!slug.isEmpty()) {
+       json["slug"] = slug;
    }
 
    QJsonDocument doc(json);
@@ -718,8 +727,12 @@ void ImmichApi::onSharedLinkReplyFinished()
        QJsonDocument doc = QJsonDocument::fromJson(response);
        QJsonObject obj = doc.object();
 
-       QString shareKey = obj["key"].toString();
-       emit sharedLinkCreated(shareKey);
+       QString shareKey = obj["slug"].toString();
+       bool isSlug = !shareKey.isEmpty();
+       if (shareKey.isEmpty()) {
+           shareKey = obj["key"].toString();
+       }
+       emit sharedLinkCreated(QUrl::toPercentEncoding(shareKey), isSlug);
    } else {
        handleNetworkError(reply);
    }

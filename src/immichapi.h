@@ -37,7 +37,7 @@ public:
     Q_INVOKABLE void downloadAsset(const QString &assetId);
     Q_INVOKABLE void addAssetsToAlbum(const QString &albumId, const QStringList &assetIds);
     Q_INVOKABLE void removeAssetsFromAlbum(const QString &albumId, const QStringList &assetIds);
-    Q_INVOKABLE void createSharedLink(const QString &type, const QVariant &ids, const QString &password, const QString &expiresAt, bool allowDownload, bool allowUpload);
+    Q_INVOKABLE void createSharedLink(const QString &type, const QVariant &ids, const QString &password, const QString &expiresAt, bool allowDownload, bool allowUpload, bool showMetadata = true, const QString &description = QString(), const QString &slug = QString());
     Q_INVOKABLE void fetchUsers();
     Q_INVOKABLE void addUsersToAlbum(const QString &albumId, const QStringList &userIds, const QString &role = QStringLiteral("editor"));
     Q_INVOKABLE void updateAlbumUserRole(const QString &albumId, const QString &userId, const QString &role);
@@ -77,7 +77,7 @@ signals:
     void assetDownloaded(const QString &assetId, const QString &filePath);
     void assetsAddedToAlbum(const QString &albumId);
     void assetsRemovedFromAlbum(const QString &albumId);
-    void sharedLinkCreated(const QString &shareKey);
+    void sharedLinkCreated(const QString &shareKey, bool isSlug);
     void usersReceived(const QJsonArray &users);
     void usersAddedToAlbum(const QString &albumId);
     void albumUserRoleUpdated(const QString &albumId);

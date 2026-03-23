@@ -1,10 +1,15 @@
 #include "albummodel.h"
+#include "authmanager.h"
 #include <QJsonObject>
 #include <algorithm>
 
-AlbumModel::AlbumModel(QObject *parent)
+AlbumModel::AlbumModel(AuthManager *authManager, QObject *parent)
     : QAbstractListModel(parent)
+    , m_authManager(authManager)
 {
+    if (m_authManager) {
+        connect(m_authManager, &AuthManager::userIdChanged, this, &AlbumModel::refreshOwnershipFlags);
+    }
 }
 
 int AlbumModel::rowCount(const QModelIndex &parent) const
@@ -24,6 +29,8 @@ QVariant AlbumModel::data(const QModelIndex &index, int role) const
     switch (role) {
     case IdRole:
         return album.id;
+    case OwnerIdRole:
+        return album.ownerId;
     case AlbumNameRole:
         return album.albumName;
     case AlbumThumbnailAssetIdRole:
@@ -38,6 +45,8 @@ QVariant AlbumModel::data(const QModelIndex &index, int role) const
         return album.startDate;
     case EndDateRole:
         return album.endDate;
+    case SharedRole:
+        return album.shared;
     case IsOwnedRole:
         return album.isOwned;
     case OwnerNameRole:
@@ -51,6 +60,7 @@ QHash<int, QByteArray> AlbumModel::roleNames() const
 {
     QHash<int, QByteArray> roles;
     roles[IdRole] = "albumId";
+    roles[OwnerIdRole] = "ownerId";
     roles[AlbumNameRole] = "albumName";
     roles[AlbumThumbnailAssetIdRole] = "albumThumbnailAssetId";
     roles[AssetCountRole] = "assetCount";
@@ -58,9 +68,22 @@ QHash<int, QByteArray> AlbumModel::roleNames() const
     roles[UpdatedAtRole] = "updatedAt";
     roles[StartDateRole] = "startDate";
     roles[EndDateRole] = "endDate";
+    roles[SharedRole] = "shared";
     roles[IsOwnedRole] = "isOwned";
     roles[OwnerNameRole] = "ownerName";
     return roles;
+}
+
+void AlbumModel::refreshOwnershipFlags()
+{
+    const QString userId = m_authManager ? m_authManager->userId() : QString();
+    for (int i = 0; i < m_albums.size(); ++i) {
+        Album &album = m_albums[i];
+        album.isOwned = !userId.isEmpty() && album.ownerId == userId;
+    }
+
+    if (!m_albums.isEmpty())
+        emit dataChanged(index(0), index(m_albums.size() - 1));
 }
 
 void AlbumModel::loadAlbums(const QJsonArray &albumsJson)
@@ -72,6 +95,7 @@ void AlbumModel::loadAlbums(const QJsonArray &albumsJson)
         QJsonObject obj = value.toObject();
         Album album;
         album.id = obj["id"].toString();
+        album.ownerId = obj["ownerId"].toString();
         album.albumName = obj["albumName"].toString();
         album.albumThumbnailAssetId = obj["albumThumbnailAssetId"].toString();
         album.assetCount = obj["assetCount"].toInt();
@@ -79,6 +103,7 @@ void AlbumModel::loadAlbums(const QJsonArray &albumsJson)
         album.updatedAt = obj["updatedAt"].toString();
         album.startDate = obj["startDate"].toString();
         album.endDate = obj["endDate"].toString();
+        album.shared = obj["shared"].toBool();
 
         // Owner info
         QJsonObject ownerObj = obj["owner"].toObject();
@@ -87,7 +112,7 @@ void AlbumModel::loadAlbums(const QJsonArray &albumsJson)
         if (album.ownerName.isEmpty()) {
             album.ownerName = ownerEmail;
         }
-        album.isOwned = !obj["shared"].toBool();
+        album.isOwned = m_authManager && !m_authManager->userId().isEmpty() && album.ownerId == m_authManager->userId();
 
         m_albums.append(album);
     }

@@ -17,7 +17,7 @@ Dialog {
   canAccept: nameField.text.length > 0
 
   onAccepted: {
-      immichApi.updateAlbum(albumId, nameField.text, descriptionField.text, activitySwitch.checked, selectedThumbnailAssetId)
+      immichApi.updateAlbum(albumId, nameField.text, descriptionField.text, isActivityEnabled, selectedThumbnailAssetId)
   }
 
   SilicaFlickable {
@@ -56,21 +56,9 @@ Dialog {
               text: dialog.albumDescription
           }
 
-          TextSwitch {
-              id: activitySwitch
-              //% "Comments and likes"
-              text: qsTrId("editAlbumDialog.commentsAndLikes")
-              //% "Allow comments and likes on this album"
-              description: qsTrId("editAlbumDialog.commentsAndLikesInfo")
-              checked: dialog.isActivityEnabled
-          }
-
-          Label {
-              x: Theme.horizontalPageMargin
-              width: parent.width - 2 * Theme.horizontalPageMargin
+          SectionHeader {
               //% "Album thumbnail"
               text: qsTrId("editAlbumDialog.albumThumbnail")
-              font.pixelSize: Theme.fontSizeLarge
               visible: dialog.albumAssets.length > 0
           }
 

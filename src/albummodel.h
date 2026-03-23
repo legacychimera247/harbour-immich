@@ -4,8 +4,11 @@
 #include <QAbstractListModel>
 #include <QJsonArray>
 
+class AuthManager;
+
 struct Album {
     QString id;
+    QString ownerId;
     QString albumName;
     QString albumThumbnailAssetId;
     int assetCount;
@@ -13,6 +16,7 @@ struct Album {
     QString updatedAt;
     QString startDate;
     QString endDate;
+    bool shared;
     bool isOwned;
     QString ownerName;
 };
@@ -31,11 +35,13 @@ public:
         UpdatedAtRole,
         StartDateRole,
         EndDateRole,
+        OwnerIdRole,
+        SharedRole,
         IsOwnedRole,
         OwnerNameRole
     };
 
-    explicit AlbumModel(QObject *parent = nullptr);
+    explicit AlbumModel(AuthManager *authManager, QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
@@ -46,7 +52,9 @@ public:
     Q_INVOKABLE void updateAlbumMetadata(const QString &albumId, const QString &albumName, const QString &albumThumbnailAssetId);
 
 private:
+    void refreshOwnershipFlags();
     QList<Album> m_albums;
+    AuthManager *m_authManager;
 };
 
 #endif

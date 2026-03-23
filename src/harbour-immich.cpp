@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
        });
    }
    ImmichApi *immichApi = new ImmichApi(authManager, app);
-   AlbumModel *albumModel = new AlbumModel(app);
+   AlbumModel *albumModel = new AlbumModel(authManager, app);
    TimelineModel *timelineModel = new TimelineModel(app);
 
    immichApi->setSettingsManager(settingsManager);

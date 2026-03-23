@@ -8,8 +8,11 @@ Page {
   property int assetsPerRow: isPortrait ? settingsManager.assetsPerRow : (settingsManager.assetsPerRow * 2)
   property real thumbnailSize: width / assetsPerRow
 
-  // Filter state: "all", "shared", "mine"
+  // Filter state: "all", "shared", "sharedWithMe", "mine"
   property string activeFilter: "all"
+  property var loadedAlbums: []
+  property int filteredCount: 0
+  property bool sharedSubsetVisible: activeFilter === "shared" || activeFilter === "sharedWithMe"
 
   // Text filter
   property string filterText: ""
@@ -32,8 +35,23 @@ Page {
       albumModel.sortAlbums(sortField, sortAscending)
   }
 
+  function setActiveFilter(filterId) {
+      if (activeFilter !== filterId) {
+          activeFilter = filterId
+          applyFilter()
+      }
+  }
+
+  function toggleSharedWithMeFilter() {
+      if (activeFilter === "sharedWithMe") {
+          setActiveFilter("shared")
+      } else {
+          setActiveFilter("sharedWithMe")
+      }
+  }
+
   function applyFilter() {
-      if (activeFilter === "shared") {
+      if (activeFilter === "shared" || activeFilter === "sharedWithMe") {
           immichApi.fetchAlbums("true")
       } else if (activeFilter === "mine") {
           immichApi.fetchAlbums("false")
@@ -41,6 +59,23 @@ Page {
           immichApi.fetchAlbums()
       }
   }
+
+  function updateFilteredCount() {
+      var count = 0
+      for (var i = 0; i < loadedAlbums.length; i++) {
+          var album = loadedAlbums[i]
+          if (activeFilter === "sharedWithMe" && album.ownerId === authManager.userId) {
+              continue
+          }
+          if (filterText.length > 0 && (!album.albumName || album.albumName.toLowerCase().indexOf(filterText) === -1)) {
+              continue
+          }
+          count++
+      }
+      filteredCount = count
+  }
+
+  onFilterTextChanged: updateFilteredCount()
 
   SilicaListView {
       id: listView
@@ -82,6 +117,70 @@ Page {
               title: qsTrId("albumsPage.albums")
           }
 
+          Item {
+              width: listView.width
+              height: filterRow.implicitHeight + Theme.paddingSmall
+
+              Row {
+                  id: filterRow
+                  anchors.left: parent.left
+                  anchors.right: parent.right
+                  anchors.leftMargin: Theme.horizontalPageMargin
+                  anchors.rightMargin: Theme.horizontalPageMargin
+                  anchors.verticalCenter: parent.verticalCenter
+                  spacing: Theme.paddingSmall
+
+                  Repeater {
+                      id: filterRepeater
+                      model: [
+                          //% "All"
+                          { id: "all", label: qsTrId("albumsPage.filterAll"), icon: "image://theme/icon-m-folder" },
+                          //% "Shared"
+                          { id: "shared", label: qsTrId("albumsPage.filterShared"), icon: "image://theme/icon-m-share" },
+                          //% "My albums"
+                          { id: "mine", label: qsTrId("albumsPage.filterMyAlbums"), icon: "image://theme/icon-m-person" }
+                      ]
+
+                      BackgroundItem {
+                          width: (filterRow.width - filterRow.spacing * (filterRepeater.count - 1)) / filterRepeater.count
+                          height: Theme.itemExtraSizeSmall
+                          highlighted: modelData.id === "shared" ? page.activeFilter === "shared" || page.activeFilter === "sharedWithMe" : page.activeFilter === modelData.id
+
+                          Rectangle {
+                              anchors.fill: parent
+                              radius: Theme.paddingSmall
+                              color: (modelData.id === "shared" ? page.activeFilter === "shared" || page.activeFilter === "sharedWithMe" : page.activeFilter === modelData.id) ? Theme.rgba(Theme.highlightBackgroundColor, 0.4) : Theme.rgba(Theme.highlightBackgroundColor, 0.1)
+                              border.width: (modelData.id === "shared" ? page.activeFilter === "shared" || page.activeFilter === "sharedWithMe" : page.activeFilter === modelData.id) ? 1 : 0
+                              border.color: Theme.highlightColor
+                          }
+
+                          Row {
+                              anchors.centerIn: parent
+                              spacing: Theme.paddingSmall
+
+                              Icon {
+                                  source: modelData.icon
+                                  width: Theme.iconSizeSmall
+                                  height: Theme.iconSizeSmall
+                                  anchors.verticalCenter: parent.verticalCenter
+                                  color: (modelData.id === "shared" ? page.activeFilter === "shared" || page.activeFilter === "sharedWithMe" : page.activeFilter === modelData.id) ? Theme.highlightColor : Theme.primaryColor
+                              }
+
+                              Label {
+                                  text: modelData.label
+                                  font.pixelSize: Theme.fontSizeExtraSmall
+                                  color: (modelData.id === "shared" ? page.activeFilter === "shared" || page.activeFilter === "sharedWithMe" : page.activeFilter === modelData.id) ? Theme.highlightColor : Theme.primaryColor
+                                  anchors.verticalCenter: parent.verticalCenter
+                                  truncationMode: TruncationMode.Fade
+                              }
+                          }
+
+                          onClicked: page.setActiveFilter(modelData.id)
+                      }
+                  }
+              }
+          }
+
           // Sort row
           Item {
               width: listView.width
@@ -89,8 +188,8 @@ Page {
 
               BackgroundItem {
                   id: sortOrderButton
-                  anchors.right: parent.right
-                  anchors.rightMargin: Theme.horizontalPageMargin
+                  anchors.right: page.sharedSubsetVisible ? sharedWithMeButton.left : parent.right
+                  anchors.rightMargin: page.sharedSubsetVisible ? Theme.paddingSmall : Theme.horizontalPageMargin
                   anchors.verticalCenter: parent.verticalCenter
                   width: Theme.itemSizeSmall
                   height: Theme.itemSizeExtraSmall
@@ -112,6 +211,35 @@ Page {
                       page.sortAscending = !page.sortAscending
                       page.applySorting()
                   }
+              }
+
+              BackgroundItem {
+                  id: sharedWithMeButton
+                  anchors.right: parent.right
+                  anchors.rightMargin: Theme.horizontalPageMargin
+                  anchors.verticalCenter: parent.verticalCenter
+                  width: visible ? Theme.itemSizeSmall : 0
+                  height: Theme.itemSizeExtraSmall
+                  visible: page.sharedSubsetVisible
+                  highlighted: page.activeFilter === "sharedWithMe"
+
+                  Rectangle {
+                      anchors.fill: parent
+                      radius: Theme.paddingSmall
+                      color: page.activeFilter === "sharedWithMe" ? Theme.rgba(Theme.highlightBackgroundColor, 0.4) : Theme.rgba(Theme.highlightBackgroundColor, 0.1)
+                      border.width: page.activeFilter === "sharedWithMe" ? 1 : 0
+                      border.color: Theme.highlightColor
+                  }
+
+                  Icon {
+                      anchors.centerIn: parent
+                      source: "image://theme/icon-m-message"
+                      width: Theme.iconSizeSmall
+                      height: Theme.iconSizeSmall
+                      color: page.activeFilter === "sharedWithMe" ? Theme.highlightColor : Theme.primaryColor
+                  }
+
+                  onClicked: page.toggleSharedWithMeFilter()
               }
 
               ComboBox {
@@ -157,83 +285,16 @@ Page {
               EnterKey.iconSource: "image://theme/icon-m-enter-close"
               EnterKey.onClicked: focus = false
           }
-
-          // Quick filters row
-          Item {
-              width: listView.width
-              height: Theme.itemSizeExtraSmall + Theme.paddingMedium
-
-              Row {
-                  id: filterRow
-                  anchors.left: parent.left
-                  anchors.right: parent.right
-                  anchors.leftMargin: Theme.horizontalPageMargin
-                  anchors.rightMargin: Theme.horizontalPageMargin
-                  anchors.verticalCenter: parent.verticalCenter
-                  spacing: Theme.paddingSmall
-
-                  Repeater {
-                      model: [
-                          //% "All"
-                          { id: "all", label: qsTrId("albumsPage.filterAll"), icon: "image://theme/icon-m-folder" },
-                          //% "Shared with me"
-                          { id: "shared", label: qsTrId("albumsPage.filterSharedWithMe"), icon: "image://theme/icon-m-share" },
-                          //% "My albums"
-                          { id: "mine", label: qsTrId("albumsPage.filterMyAlbums"), icon: "image://theme/icon-m-person" }
-                      ]
-
-                      BackgroundItem {
-                          width: (filterRow.width - 2 * Theme.paddingSmall) / 3
-                          height: Theme.itemSizeExtraSmall
-                          highlighted: page.activeFilter === modelData.id
-
-                          Rectangle {
-                              anchors.fill: parent
-                              radius: Theme.paddingSmall
-                              color: page.activeFilter === modelData.id ? Theme.rgba(Theme.highlightBackgroundColor, 0.4) : Theme.rgba(Theme.highlightBackgroundColor, 0.1)
-                              border.width: page.activeFilter === modelData.id ? 1 : 0
-                              border.color: Theme.highlightColor
-                          }
-
-                          Row {
-                              anchors.centerIn: parent
-                              spacing: Theme.paddingSmall
-
-                              Icon {
-                                  source: modelData.icon
-                                  width: Theme.iconSizeSmall
-                                  height: Theme.iconSizeSmall
-                                  anchors.verticalCenter: parent.verticalCenter
-                                  color: page.activeFilter === modelData.id ? Theme.highlightColor : Theme.primaryColor
-                              }
-
-                              Label {
-                                  text: modelData.label
-                                  font.pixelSize: Theme.fontSizeExtraSmall
-                                  color: page.activeFilter === modelData.id ? Theme.highlightColor : Theme.primaryColor
-                                  anchors.verticalCenter: parent.verticalCenter
-                              }
-                          }
-
-                          onClicked: {
-                              if (page.activeFilter !== modelData.id) {
-                                  page.activeFilter = modelData.id
-                                  page.applyFilter()
-                              }
-                          }
-                      }
-                  }
-              }
-          }
       }
 
       delegate: ListItem {
           id: listItem
 
           property bool matchesFilter: page.filterText.length === 0 || albumName.toLowerCase().indexOf(page.filterText) !== -1
+          property bool matchesAlbumFilter: page.activeFilter !== "sharedWithMe" || !isOwned
 
-          contentHeight: matchesFilter ? page.thumbnailSize + 2 * Theme.paddingMedium : 0
-          visible: matchesFilter
+          contentHeight: matchesFilter && matchesAlbumFilter ? page.thumbnailSize + 2 * Theme.paddingMedium : 0
+          visible: matchesFilter && matchesAlbumFilter
 
           Row {
               anchors.fill: parent
@@ -316,12 +377,12 @@ Page {
       Column {
           width: parent.width
           spacing: Theme.paddingLarge
-          visible: listView.count === 0
+          visible: filteredCount === 0
           anchors.verticalCenter: parent.verticalCenter
 
           Icon {
               anchors.horizontalCenter: parent.horizontalCenter
-              source: page.activeFilter === "all" ? "image://theme/icon-m-folder" : page.activeFilter === "shared" ? "image://theme/icon-m-share" : "image://theme/icon-m-person"
+              source: page.activeFilter === "all" ? "image://theme/icon-m-folder" : page.activeFilter === "shared" ? "image://theme/icon-m-share" : page.activeFilter === "sharedWithMe" ? "image://theme/icon-m-message" : "image://theme/icon-m-person"
               color: Theme.highlightColor
           }
 
@@ -332,7 +393,9 @@ Page {
                     //% "No albums"
                     ? qsTrId("albumsPage.noAlbums") : page.activeFilter === "shared"
                     //% "No shared albums"
-                    ? qsTrId("albumsPage.noSharedAlbums")
+                    ? qsTrId("albumsPage.noSharedAlbums") : page.activeFilter === "sharedWithMe"
+                    //% "No albums shared with you"
+                    ? qsTrId("albumsPage.noSharedWithMeAlbums")
                     //% "No personal albums"
                     : qsTrId("albumsPage.noMyAlbums")
               font.pixelSize: Theme.fontSizeLarge
@@ -347,8 +410,10 @@ Page {
               text: page.activeFilter === "all"
                     //% "Pull down to refresh or create albums in Immich"
                     ? qsTrId("albumsPage.noAllAlbumsHint") : page.activeFilter === "shared"
+                    //% "Shared albums will appear here"
+                    ? qsTrId("albumsPage.noSharedAlbumsHint") : page.activeFilter === "sharedWithMe"
                     //% "Albums shared with you will appear here"
-                    ? qsTrId("albumsPage.noSharedAlbumsHint")
+                    ? qsTrId("albumsPage.noSharedWithMeAlbumsHint")
                     //% "Create an album in Immich to see it here"
                     : qsTrId("albumsPage.noMyAlbumsHint")
               font.pixelSize: Theme.fontSizeSmall
@@ -374,7 +439,9 @@ Page {
   Connections {
       target: immichApi
       onAlbumsReceived: {
+          page.loadedAlbums = albums
           page.applySorting()
+          page.updateFilteredCount()
           scrollToTopTimer.restart()
       }
       onAlbumUpdated: {

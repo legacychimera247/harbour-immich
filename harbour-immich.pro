@@ -36,7 +36,6 @@ icons.path = $$PREFIX/share/$${TARGET}/icons
 INSTALLS += icons
 
 DISTFILES += qml/harbour-immich.qml \
-    qml/components/AlbumSelectorDialog.qml \
     qml/components/AssetGridItem.qml \
     qml/components/DismissDragBackdrop.qml \
     qml/components/FilterablePickerDialog.qml \
@@ -55,7 +54,6 @@ DISTFILES += qml/harbour-immich.qml \
     qml/pages/AssetDetailPage.qml \
     qml/pages/AssetInfoPage.qml \
     qml/pages/EditAlbumDialog.qml \
-    qml/pages/EditAlbumUsersDialog.qml \
     qml/pages/EditAssetDialog.qml \
     qml/pages/LogViewerPage.qml \
     qml/pages/MemoryDetailPage.qml \
