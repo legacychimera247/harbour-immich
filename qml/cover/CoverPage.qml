@@ -190,6 +190,48 @@ CoverBackground {
             color: Theme.primaryColor
         }
 
+        //Backup status row
+        Row {
+            width: parent.width
+            spacing: Theme.paddingSmall
+            visible: settingsManager.backupEnabled && authManager.isAuthenticated
+
+            Image {
+                width: Theme.iconSizeExtraSmall
+                height: width
+                anchors.verticalCenter: parent.verticalCenter
+                source: {
+                    if (backupManager.currentFile)
+                        return "image://theme/icon-s-sync"
+                    if (backupManager.pendingCount > 0)
+                        return "image://theme/icon-s-cloud-download"
+                    return "image://theme/icon-s-installed"
+                }
+            }
+
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                font.pixelSize: Theme.fontSizeTiny
+                color: Theme.highlightColor
+                text: {
+                    if (backupManager.currentFile) {
+                        //% "Backing up..."
+                        return qsTrId("coverPage.backingUp")
+                    }
+                    if (backupManager.pendingCount > 0) {
+                        //% "%1 pending"
+                        return qsTrId("coverPage.pending").arg(backupManager.pendingCount)
+                    }
+                    if (backupManager.backedUpCount > 0) {
+                        //% "All backed up"
+                        return qsTrId("coverPage.allBackedUp")
+                    }
+                    return ""
+                }
+                visible: text !== ""
+            }
+        }
+
         // App name + connection status
         Row {
             width: parent.width
@@ -236,10 +278,28 @@ CoverBackground {
         }
     }
 
+    // Cover actions when backup is enabled
+    CoverActionList {
+        enabled: authManager.isAuthenticated && settingsManager.backupEnabled
+
+        CoverAction {
+            iconSource: "image://theme/icon-cover-refresh"
+            onTriggered: {
+                immichApi.fetchMemories()
+            }
+        }
+
+        CoverAction {
+            iconSource: "image://theme/icon-cover-sync"
+            onTriggered: {
+                backupManager.scanNow()
+            }
+        }
+    }
 
     // Cover actions when backup is disabled
     CoverActionList {
-        enabled: authManager.isAuthenticated
+        enabled: authManager.isAuthenticated && !settingsManager.backupEnabled
 
         CoverAction {
             iconSource: "image://theme/icon-cover-refresh"

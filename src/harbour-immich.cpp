@@ -22,6 +22,7 @@
 #include "imageprovider.h"
 #include "thumbhashprovider.h"
 #include "logmanager.h"
+#include "backupmanager.h"
 
 int main(int argc, char *argv[])
 {
@@ -84,6 +85,22 @@ int main(int argc, char *argv[])
 
    immichApi->setSettingsManager(settingsManager);
 
+   BackupManager *backupManager = new BackupManager(authManager, settingsManager, immichApi, app);
+   backupManager->initialize();
+
+   // Connect manual upload to backup tracking
+   QObject::connect(immichApi, &ImmichApi::assetUploaded, [backupManager](const QString &assetId, const QString &filePath, const QString &status) {
+       Q_UNUSED(status)
+       backupManager->registerManualUpload(filePath, assetId);
+   });
+
+   // Connect asset deletion to backup state
+   QObject::connect(immichApi, &ImmichApi::assetsDeleted, [backupManager](const QStringList &assetIds) {
+       for (const QString &id : assetIds) {
+           backupManager->handleServerDeletion(id);
+       }
+   });
+
    // Register custom image provider for authenticated image loading
    view->engine()->addImageProvider(QLatin1String("immich"), new ImmichImageProvider(authManager, settingsManager));
    view->engine()->addImageProvider(QLatin1String("thumbhash"), new ThumbhashProvider());
@@ -109,6 +126,7 @@ int main(int argc, char *argv[])
    view->rootContext()->setContextProperty("settingsManager", settingsManager);
    view->rootContext()->setContextProperty("secureStorage", secureStorage);
    view->rootContext()->setContextProperty("logManager", logManager);
+   view->rootContext()->setContextProperty("backupManager", backupManager);
 
    view->setSource(SailfishApp::pathTo("qml/harbour-immich.qml"));
    view->show();

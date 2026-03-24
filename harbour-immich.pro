@@ -1,13 +1,15 @@
 TARGET = harbour-immich
 
 CONFIG += sailfishapp link_pkgconfig
-QT += network multimedia dbus
+QT += network multimedia sql dbus
 PKGCONFIG += sailfishsecrets sailfishapp
 INCLUDEPATH += /usr/include/Sailfish
 
 CONFIG(release, debug|release): DEFINES += QT_NO_DEBUG_OUTPUT
 
 SOURCES += src/harbour-immich.cpp \
+    src/backupdatabase.cpp \
+    src/backupmanager.cpp \
     src/immichapi.cpp \
     src/authmanager.cpp \
     src/logmanager.cpp \
@@ -20,6 +22,8 @@ SOURCES += src/harbour-immich.cpp \
     src/timelinemodel.cpp
 
 HEADERS += \
+    src/backupdatabase.h \
+    src/backupmanager.h \
     src/immichapi.h \
     src/authmanager.h \
     src/logmanager.h \
@@ -55,6 +59,7 @@ DISTFILES += qml/harbour-immich.qml \
     qml/pages/AssetInfoPage.qml \
     qml/pages/EditAlbumDialog.qml \
     qml/pages/EditAssetDialog.qml \
+    qml/pages/FolderPickerPage.qml \
     qml/pages/LogViewerPage.qml \
     qml/pages/MemoryDetailPage.qml \
     qml/pages/OAuthPage.qml \
@@ -69,6 +74,7 @@ DISTFILES += qml/harbour-immich.qml \
     qml/pages/ShareResultPage.qml \
     qml/pages/StackDetailPage.qml \
     qml/pages/TimelinePage.qml \
+    qml/pages/UploadPage.qml \
     qml/pages/VideoPlayerPage.qml \
     icons/cover-icon.png \
     rpm/harbour-immich.changes.in \

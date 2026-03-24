@@ -1,11 +1,44 @@
 import QtQuick 2.0
 import Sailfish.Silica 1.0
+import Nemo.KeepAlive 1.2
 import "pages"
 
 ApplicationWindow
 {
     cover: Qt.resolvedUrl("cover/CoverPage.qml")
     allowedOrientations: defaultAllowedOrientations
+
+    // Background backup job - wakes the device periodically to scan and upload
+    BackgroundJob {
+        id: backupJob
+        enabled: settingsManager.backupEnabled && authManager.isAuthenticated
+        frequency: {
+            var mins = settingsManager.backupInterval
+            if (mins <= 30) return BackgroundJob.ThirtyMinutes
+            if (mins <= 60) return BackgroundJob.OneHour
+            if (mins <= 240) return BackgroundJob.FourHours
+            return BackgroundJob.EightHours
+        }
+        onTriggered: {
+            console.log("BackgroundJob: Wakeup triggered, starting backup scan")
+            backupManager.scanNow()
+            // If no active work finish immediately, otherwise wait for completion
+            if (!backupManager.backgroundActive) {
+                backupJob.finished()
+            }
+        }
+    }
+
+    Connections {
+        target: backupManager
+        onBackgroundActiveChanged: {
+            // Release wakelock when background work completes
+            if (!backupManager.backgroundActive && backupJob.running) {
+                console.log("BackgroundJob: Work complete, releasing wakelock")
+                backupJob.finished()
+            }
+        }
+    }
 
     // Start with empty page stack to be populated after credentials check
     Component.onCompleted: {

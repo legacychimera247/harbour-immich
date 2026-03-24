@@ -214,6 +214,324 @@ Page {
            }
 
            SectionHeader {
+              //% "Backup"
+              text: qsTrId("settingsPage.backup")
+           }
+
+           TextSwitch {
+              //% "Automatic backup"
+              text: qsTrId("settingsPage.backupEnabled")
+              //% "Automatically back up photos and videos from selected folders to your Immich server."
+              description: qsTrId("settingsPage.backupEnabledInfo")
+              checked: settingsManager.backupEnabled
+              onCheckedChanged: {
+                  backupManager.enabled = checked
+              }
+           }
+
+           // Backup status
+           Column {
+              x: Theme.horizontalPageMargin
+              width: parent.width - 2 * Theme.horizontalPageMargin
+              spacing: Theme.paddingSmall
+              visible: settingsManager.backupEnabled
+
+              Row {
+                  width: parent.width
+                  spacing: Theme.paddingMedium
+
+                  Icon {
+                      source: backupManager.running ? "image://theme/icon-s-sync" : "image://theme/icon-s-cloud-download"
+                      width: Theme.iconSizeSmall
+                      height: Theme.iconSizeSmall
+                      anchors.verticalCenter: parent.verticalCenter
+                  }
+
+                  Label {
+                      anchors.verticalCenter: parent.verticalCenter
+                      font.pixelSize: Theme.fontSizeSmall
+                      color: Theme.highlightColor
+                      text: {
+                          if (backupManager.currentFile) {
+                              //% "Backing up: %1"
+                              return qsTrId("settingsPage.backingUp").arg(backupManager.currentFile)
+                          }
+                          if (backupManager.running) {
+                              //% "Backup active"
+                              return qsTrId("settingsPage.backupActive")
+                          }
+                          //% "Backup idle"
+                          return qsTrId("settingsPage.backupIdle")
+                      }
+                  }
+              }
+
+              // Progress bar (visible during upload)
+              Item {
+                  width: parent.width
+                  height: Theme.paddingSmall
+                  visible: backupManager.currentFile !== ""
+
+                  Rectangle {
+                      width: parent.width
+                      height: parent.height
+                      color: Theme.rgba(Theme.highlightColor, 0.2)
+                      radius: height / 2
+                  }
+
+                  Rectangle {
+                      width: parent.width * backupManager.currentProgress
+                      height: parent.height
+                      color: Theme.highlightColor
+                      radius: height / 2
+                      Behavior on width { NumberAnimation { duration: 200 } }
+                  }
+              }
+
+              Row {
+                  width: parent.width
+                  spacing: Theme.paddingLarge
+
+                  Label {
+                      font.pixelSize: Theme.fontSizeExtraSmall
+                      color: Theme.secondaryColor
+                      //% "Backed up: %1"
+                      text: qsTrId("settingsPage.backedUpCount").arg(backupManager.backedUpCount)
+                  }
+
+                  Label {
+                      font.pixelSize: Theme.fontSizeExtraSmall
+                      color: Theme.secondaryColor
+                      //% "Pending: %1"
+                      text: qsTrId("settingsPage.pendingCount").arg(backupManager.pendingCount)
+                  }
+
+                  Label {
+                      font.pixelSize: Theme.fontSizeExtraSmall
+                      color: backupManager.failedCount > 0 ? "#ff4444" : Theme.secondaryColor
+                      //% "Failed: %1"
+                      text: qsTrId("settingsPage.failedCount").arg(backupManager.failedCount)
+                  }
+              }
+           }
+
+           // Backup folders
+           BackgroundItem {
+              width: parent.width
+              visible: settingsManager.backupEnabled
+              onClicked: pageStack.push(Qt.resolvedUrl("FolderPickerPage.qml"))
+
+              Row {
+                  x: Theme.horizontalPageMargin
+                  width: parent.width - 2 * Theme.horizontalPageMargin
+                  anchors.verticalCenter: parent.verticalCenter
+                  spacing: Theme.paddingMedium
+
+                  Icon {
+                      source: "image://theme/icon-m-folder"
+                      width: Theme.iconSizeMedium
+                      height: Theme.iconSizeMedium
+                      anchors.verticalCenter: parent.verticalCenter
+                  }
+
+                  Column {
+                      anchors.verticalCenter: parent.verticalCenter
+                      width: parent.width - Theme.iconSizeMedium - Theme.paddingMedium
+
+                      Label {
+                          //% "Watched folders"
+                          text: qsTrId("settingsPage.watchedFolders")
+                          color: Theme.primaryColor
+                      }
+
+                      Label {
+                          width: parent.width
+                          //% "%1 folder(s) selected"
+                          text: qsTrId("settingsPage.foldersSelected").arg(settingsManager.backupFolders.length)
+                          font.pixelSize: Theme.fontSizeExtraSmall
+                          color: Theme.secondaryColor
+                      }
+                  }
+              }
+           }
+
+           TextSwitch {
+              visible: settingsManager.backupEnabled
+              //% "Back up photos on cellular"
+              text: qsTrId("settingsPage.backupPhotosOnCellular")
+              //% "Allow photo backup when not connected to Wi-Fi."
+              description: qsTrId("settingsPage.backupPhotosOnCellularInfo")
+              checked: settingsManager.backupPhotosOnCellular
+              onCheckedChanged: {
+                  settingsManager.backupPhotosOnCellular = checked
+              }
+           }
+
+           TextSwitch {
+              visible: settingsManager.backupEnabled
+              //% "Back up videos on cellular"
+              text: qsTrId("settingsPage.backupVideosOnCellular")
+              //% "Allow video backup when not connected to Wi-Fi."
+              description: qsTrId("settingsPage.backupVideosOnCellularInfo")
+              checked: settingsManager.backupVideosOnCellular
+              onCheckedChanged: {
+                  settingsManager.backupVideosOnCellular = checked
+              }
+           }
+
+           TextSwitch {
+              visible: settingsManager.backupEnabled
+              //% "Only while charging"
+              text: qsTrId("settingsPage.backupOnlyWhileCharging")
+              //% "Only run backup when the device is connected to a charger."
+              description: qsTrId("settingsPage.backupOnlyWhileChargingInfo")
+              checked: settingsManager.backupOnlyWhileCharging
+              onCheckedChanged: {
+                  settingsManager.backupOnlyWhileCharging = checked
+              }
+           }
+
+           TextSwitch {
+              visible: settingsManager.backupEnabled
+              //% "Delete after backup"
+              text: qsTrId("settingsPage.backupDeleteAfter")
+              //% "Remove photos and videos from device after successful backup."
+              description: qsTrId("settingsPage.backupDeleteAfterInfo")
+              checked: settingsManager.backupDeleteAfter
+              onCheckedChanged: {
+                  settingsManager.backupDeleteAfter = checked
+              }
+           }
+
+           TextSwitch {
+               visible: settingsManager.backupEnabled
+               //% "Auto-disable after backup
+               text: qsTrId("settingsPage.backupAutoDisable")
+               //% "Automatically turn off backup after all pending files have been uploaded."
+               description: qsTrId("settingsPage.backupAutoDisableInfo")
+               checked: settingsManager.backupAutoDisable
+               onCheckedChanged: {
+                   settingsManager.backupAutoDisable = checked
+               }
+           }
+
+           TextSwitch {
+               visible: settingsManager.backupEnabled
+               //% "Skip asset verification"
+               text: qsTrId("settingsPage.backupSkipVerification")
+               //% "Skip checking of assets against the server before uploading. Faster scanning, but duplicates are only detected by the server during upload."
+               description: qsTrId("settingsPage.backupSkipVerificationInfo")
+               checked: settingsManager.backupSkipVerification
+               onCheckedChanged: {
+                   settingsManager.backupSkipVerification = checked
+               }
+           }
+
+           // Scan interval
+           ComboBox {
+               visible: settingsManager.backupEnabled
+               //% "Scan interval"
+               label: qsTrId("settingsPage.backupScanInterval")
+               //% "How often to scan for new files. Shorter intervals may impact battery life."
+               description: qsTrId("settingsPage.backupScanIntervalInfo")
+               currentIndex: {
+                   var mins = settingsManager.backupScanInterval
+                   if (mins <= 30) return 0
+                   if (mins <= 60) return 1
+                   if (mins <= 240) return 2
+                   return 3
+               }
+               menu: ContextMenu {
+                   MenuItem {
+                       //% "30 minutes"
+                       text: qsTrId("settingsPage.backupScanInterval30")
+                       onClicked: settingsManager.backupScanInterval = 30
+                   }
+                   MenuItem {
+                       //% "1 hour"
+                       text: qsTrId("settingsPage.backupScanInterval60")
+                       onClicked: settingsManager.backupScanInterval = 60
+                   }
+                   MenuItem {
+                       //% "4 hours"
+                       text: qsTrId("settingsPage.backupScanInterval240")
+                       onClicked: settingsManager.backupScanInterval = 240
+                   }
+                   MenuItem {
+                       //% "8 hours"
+                       text: qsTrId("settingsPage.backupScanInterval480")
+                       onClicked: settingsManager.backupScanInterval = 480
+                   }
+               }
+           }
+
+           // Backup from date
+           ValueButton {
+               visible: settingsManager.backupEnabled
+               //% "Back up files from"
+               label: qsTrId("settingsPage.backupFromDate")
+               //% "All files (no limit)"
+               value: settingsManager.backupFromDate ? Qt.formatDate(new Date(settingsManager.backupFromDate), "dd MMM yyyy") : qsTrId("settingsPage.backupFromDateAll")
+               onClicked: {
+                   var currentDate = settingsManager.backupFromDate ? new Date(settingsManager.backupFromDate) : new Date()
+                   var dialog = pageStack.push("Sailfish.Silica.DatePickerDialog", {
+                       date: currentDate
+                   })
+                   dialog.accepted.connect(function() {
+                       settingsManager.backupFromDate = dialog.date.toISOString().substring(0, 10)
+                   })
+               }
+               onPressAndHold: {
+                   settingsManager.backupFromDate = ""
+               }
+           }
+
+           Label {
+               x: Theme.horizontalPageMargin
+               width: parent.width - 2 * Theme.horizontalPageMargin
+               visible: settingsManager.backupEnabled
+               //% "Only back up files modified after this date. Long press to clear."
+               text: qsTrId("settingsPage.backupFromDateInfo")
+               font.pixelSize: Theme.fontSizeExtraSmall
+               color: Theme.secondaryColor
+               wrapMode: Text.WordWrap
+           }
+
+           Row {
+              anchors.horizontalCenter: parent.horizontalCenter
+              spacing: Theme.paddingMedium
+              visible: settingsManager.backupEnabled
+
+              Button {
+                  //% "Scan now"
+                  text: qsTrId("settingsPage.backupScanNow")
+                  onClicked: backupManager.scanNow()
+              }
+
+              Button {
+                  //% "Retry failed"
+                  text: qsTrId("settingsPage.backupRetryFailed")
+                  enabled: backupManager.failedCount > 0
+                  onClicked: backupManager.retryFailed()
+              }
+           }
+
+           // Clear database button
+           Button {
+               anchors.horizontalCenter: parent.horizontalCenter
+               visible: settingsManager.backupEnabled
+               //% "Clear backup database"
+               text: qsTrId("settingsPage.backupClearDb")
+               color: "#ff4444"
+               onClicked: {
+                   //% "Clearing backup database"
+                   remorse.execute(qsTrId("settingsPage.backupClearDbRemorse"), function() {
+                       backupManager.clearDatabase()
+                   })
+               }
+           }
+
+           SectionHeader {
                //% "Account"
                text: qsTrId("settingsPage.account")
            }
@@ -388,5 +706,27 @@ Page {
 
    RemorsePopup {
        id: remorse
+   }
+
+   Connections {
+       target: backupManager
+       onServerSyncComplete: {
+           //% "Verified: %1 already on server, %2 new to upload"
+           notification.show(qsTrId("settingsPage.serverSyncResult").arg(matched).arg(pending))
+       }
+       onDatabaseCleared: {
+           //% "Backup database cleared"
+           notification.show(qsTrId("settingsPage.dbCleared"))
+       }
+       onMediaTypesFetchFailed: {
+           //% "Could not fetch supported media types from server. Backup disabled.
+           notification.showError(qsTrId("settingsPage.mediaTypesFetchFailed"))
+       }
+   }
+
+   NotificationBanner {
+       id: notification
+       anchors.bottom: parent.bottom
+       z: 10
    }
 }

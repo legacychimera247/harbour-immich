@@ -16,6 +16,11 @@ BackgroundItem {
     property int stackAssetCount: 0
     property int imageSize: Math.max(64, Math.ceil(Math.max(width, height)))
     property bool isHighlighted: false
+    property bool currentBackupState: false
+
+    function syncBackupState() {
+        currentBackupState = assetId && backupManager.isAssetBackedUp(assetId)
+    }
 
     function formatDuration(dur) {
         if (!dur || dur === "") return ""
@@ -31,6 +36,7 @@ BackgroundItem {
         return m + ":" + (s < 10 ? "0" : "") + s
     }
 
+    Component.onCompleted:  syncBackupState()
 
     ThemeEffect {
         id: selectionFeedback
@@ -44,6 +50,8 @@ BackgroundItem {
             selectionFeedback.play()
         }
     }
+
+    onAssetIdChanged:  syncBackupState()
 
     Image {
         id: thumbhashImage
@@ -149,6 +157,17 @@ BackgroundItem {
         visible: stackId !== "" && stackAssetCount > 1
     }
 
+    // Backup status indicator
+    Icon {
+        anchors.bottom: parent.bottom
+        anchors.right: parent.right
+        anchors.margins: Theme.paddingSmall
+        width: Theme.iconSizeSmallPlus
+        height: Theme.iconSizeSmallPlus
+        source: "image://theme/icon-m-cloud-download"
+        visible: item.currentBackupState
+    }
+
     // Highlight overlay for scroll-to-asset
     Rectangle {
         id: highlightOverlay
@@ -174,5 +193,10 @@ BackgroundItem {
             highlightAnim.stop()
             highlightOverlay.opacity = 0
         }
+    }
+
+    Connections {
+        target: backupManager
+        onBackupStatusChanged: item.syncBackupState()
     }
 }
