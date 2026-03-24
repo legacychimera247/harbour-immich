@@ -341,7 +341,7 @@ Page {
        }
        onAssetDownloaded: {
            if (assetId === page.videoId) {
-               //% "Downloaded: %1"
+               //% "Downloaded to: %1"
                notification.show(qsTrId("videoPlayerPage.downloaded").arg(filePath))
            }
        }

@@ -25,6 +25,7 @@ class SettingsManager : public QObject
     Q_PROPERTY(bool backupSkipVerification READ backupSkipVerification WRITE setBackupSkipVerification NOTIFY backupSkipVerificationChanged)
     Q_PROPERTY(bool coverShowAssets READ coverShowAssets WRITE setCoverShowAssets NOTIFY coverShowAssetsChanged)
     Q_PROPERTY(bool coverSlideshow READ coverSlideshow WRITE setCoverSlideshow NOTIFY coverSlideshowChanged)
+    Q_PROPERTY(QString downloadFolder READ downloadFolder WRITE setDownloadFolder NOTIFY downloadFolderChanged)
 
 public:
     explicit SettingsManager(QObject *parent = nullptr);
@@ -86,6 +87,9 @@ public:
     bool coverSlideshow() const;
     void setCoverSlideshow(bool enabled);
 
+    QString downloadFolder() const;
+    void setDownloadFolder(const QString &folder);
+
     Q_INVOKABLE QString homePath() const;
 
 signals:
@@ -106,6 +110,7 @@ signals:
     void backupSkipVerificationChanged();
     void coverShowAssetsChanged();
     void coverSlideshowChanged();
+    void downloadFolderChanged();
 
 private:
     QSettings m_settings;

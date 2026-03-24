@@ -16,6 +16,7 @@
 #include <QMimeDatabase>
 #include <QUrl>
 #include <QStandardPaths>
+#include <QDir>
 #include <QDateTime>
 #include <QTimer>
 #include <QMediaPlayer>
@@ -611,7 +612,8 @@ void ImmichApi::startAssetDownload(const QString &assetId, const QString &fileNa
    QNetworkRequest request = createAuthenticatedRequest(url);
    request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
 
-   QString downloadPath = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
+   QString downloadPath = m_settingsManager ? m_settingsManager->downloadFolder() : QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
+   QDir().mkdir(downloadPath);
    QString tempPath = downloadPath + "/.download_" + assetId;
 
    QFile *file = new QFile(tempPath);

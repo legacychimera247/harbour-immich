@@ -214,6 +214,22 @@ Page {
            }
 
            SectionHeader {
+              //% "Downloads"
+              text: qsTrId("settingsPage.downloads")
+           }
+
+           ValueButton {
+               //% "Downloads folder"
+               label: qsTrId("settingsPage.downloadsFolder")
+               value: settingsManager.downloadFolder.split("/").pop()
+               //% "Folder where downloaded photos and videos will be saved."
+               description: qsTrId("settingsPage.downloadsFolderInfo")
+               onClicked: {
+                   pageStack.push(Qt.resolvedUrl("../components/DownloadFolderDialog.qml"))
+               }
+           }
+
+           SectionHeader {
               //% "Backup"
               text: qsTrId("settingsPage.backup")
            }

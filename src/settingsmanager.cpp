@@ -271,3 +271,16 @@ void SettingsManager::setCoverSlideshow(bool enabled)
         emit coverSlideshowChanged();
     }
 }
+
+QString SettingsManager::downloadFolder() const
+{
+    return m_settings.value("downloadFolder", QStandardPaths::writableLocation(QStandardPaths::DownloadLocation)).toString();
+}
+
+void SettingsManager::setDownloadFolder(const QString &folder)
+{
+    if (downloadFolder() != folder) {
+        m_settings.setValue("downloadFolder", folder);
+        emit downloadFolderChanged();
+    }
+}

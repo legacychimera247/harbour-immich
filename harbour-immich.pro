@@ -42,6 +42,7 @@ INSTALLS += icons
 DISTFILES += qml/harbour-immich.qml \
     qml/components/AssetGridItem.qml \
     qml/components/DismissDragBackdrop.qml \
+    qml/components/DownloadFolderDialog.qml \
     qml/components/FilterablePickerDialog.qml \
     qml/components/MemoriesBar.qml \
     qml/components/NotificationBanner.qml \

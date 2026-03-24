@@ -441,7 +441,7 @@ Page {
         }
         onAssetDownloaded: {
             if (assetId === page.assetId) {
-                //% "Downloaded: %1"
+                //% "Downloaded to: %1"
                 notification.show(qsTrId("assetDetailPage.downloaded").arg(filePath))
             }
         }
