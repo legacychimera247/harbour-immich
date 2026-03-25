@@ -121,12 +121,12 @@
     <message id="selectionActionBar.stack">
         <location filename="../qml/components/SelectionActionBar.qml" line="208"/>
         <source>Stack</source>
-        <translation type="unfinished"></translation>
+        <translation>Stabel</translation>
     </message>
     <message id="selectionActionBar.addToAlbum">
         <location filename="../qml/components/SelectionActionBar.qml" line="189"/>
         <source>Add to album</source>
-        <translation type="unfinished"></translation>
+        <translation>Legg til album</translation>
     </message>
     <message id="selectionActionBar.clear">
         <location filename="../qml/components/SelectionActionBar.qml" line="227"/>
@@ -167,17 +167,17 @@
     <message id="coverPage.backingUp">
         <location filename="../qml/cover/CoverPage.qml" line="219"/>
         <source>Backing up...</source>
-        <translation type="unfinished"></translation>
+        <translation>Tar sikkerhetskopi...</translation>
     </message>
     <message id="coverPage.pending">
         <location filename="../qml/cover/CoverPage.qml" line="223"/>
         <source>%1 pending</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 venter</translation>
     </message>
     <message id="coverPage.allBackedUp">
         <location filename="../qml/cover/CoverPage.qml" line="227"/>
         <source>All backed up</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt er sikkerhetskopiert</translation>
     </message>
     <message id="albumDetailPage.refresh">
         <location filename="../qml/pages/AlbumDetailPage.qml" line="183"/>
@@ -313,12 +313,12 @@
     <message id="albumInfoPage.roleEditor">
         <location filename="../qml/pages/AlbumInfoPage.qml" line="92"/>
         <source>Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Redigerer</translation>
     </message>
     <message id="albumInfoPage.roleViewer">
         <location filename="../qml/pages/AlbumInfoPage.qml" line="94"/>
         <source>Viewer</source>
-        <translation type="unfinished"></translation>
+        <translation>Seer</translation>
     </message>
     <message id="albumInfoPage.sharing">
         <location filename="../qml/pages/AlbumInfoPage.qml" line="100"/>
@@ -343,17 +343,17 @@
     <message id="albumInfoPage.commentsAndLikes">
         <location filename="../qml/pages/AlbumInfoPage.qml" line="117"/>
         <source>Comments and likes</source>
-        <translation type="unfinished"></translation>
+        <translation>Kommentarer og likerklikk</translation>
     </message>
     <message id="albumInfoPage.activityEnabled">
         <location filename="../qml/pages/AlbumInfoPage.qml" line="120"/>
         <source>Enabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktivert</translation>
     </message>
     <message id="albumInfoPage.activityDisabled">
         <location filename="../qml/pages/AlbumInfoPage.qml" line="122"/>
         <source>Disabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Deaktivert</translation>
     </message>
     <message id="albumPickerPage.selectOrCreate">
         <location filename="../qml/pages/AlbumPickerPage.qml" line="76"/>
@@ -393,7 +393,7 @@
     <message id="albumPickerPage.filterShared">
         <location filename="../qml/pages/AlbumPickerPage.qml" line="136"/>
         <source>Shared</source>
-        <translation type="unfinished">Delt</translation>
+        <translation>Delt</translation>
     </message>
     <message id="albumPickerPage.filterMyAlbums">
         <location filename="../qml/pages/AlbumPickerPage.qml" line="138"/>
@@ -525,7 +525,7 @@
     <message id="albumsPage.filterShared">
         <location filename="../qml/pages/AlbumsPage.qml" line="139"/>
         <source>Shared</source>
-        <translation type="unfinished">Delt</translation>
+        <translation>Delt</translation>
     </message>
     <message id="albumsPage.filterMyAlbums">
         <location filename="../qml/pages/AlbumsPage.qml" line="141"/>
@@ -551,7 +551,7 @@
     <message id="albumsPage.sharedBy">
         <location filename="../qml/pages/AlbumsPage.qml" line="359"/>
         <source>Shared by %1</source>
-        <translation>Del av %1</translation>
+        <translation>Delt av %1</translation>
     </message>
     <message id="albumsPage.noAlbums">
         <location filename="../qml/pages/AlbumsPage.qml" line="394"/>
@@ -566,7 +566,7 @@
     <message id="albumsPage.noSharedWithMeAlbums">
         <location filename="../qml/pages/AlbumsPage.qml" line="398"/>
         <source>No albums shared with you</source>
-        <translation type="unfinished"></translation>
+        <translation>Ingen album delt med deg</translation>
     </message>
     <message id="albumsPage.noMyAlbums">
         <location filename="../qml/pages/AlbumsPage.qml" line="400"/>
@@ -582,12 +582,12 @@
         <location filename="../qml/pages/AlbumsPage.qml" line="414"/>
         <source>Shared albums will appear here</source>
         <oldsource>Albums shared with you will appear here</oldsource>
-        <translation type="unfinished">Album delt med deg vil vises her</translation>
+        <translation>Delte album vil vises her</translation>
     </message>
     <message id="albumsPage.noSharedWithMeAlbumsHint">
         <location filename="../qml/pages/AlbumsPage.qml" line="416"/>
         <source>Albums shared with you will appear here</source>
-        <translation type="unfinished"></translation>
+        <translation>Album delt med deg vil vises her</translation>
     </message>
     <message id="albumsPage.noMyAlbumsHint">
         <location filename="../qml/pages/AlbumsPage.qml" line="418"/>
@@ -602,12 +602,12 @@
     <message id="assetDetailPage.releaseToClose">
         <location filename="../qml/pages/AssetDetailPage.qml" line="110"/>
         <source>Release to close</source>
-        <translation type="unfinished"></translation>
+        <translation>Slipp for å lukke</translation>
     </message>
     <message id="assetDetailPage.dragToClose">
         <location filename="../qml/pages/AssetDetailPage.qml" line="112"/>
         <source>Drag to close</source>
-        <translation type="unfinished"></translation>
+        <translation>Sveip for å lukke</translation>
     </message>
     <message id="assetDetailPage.failed">
         <location filename="../qml/pages/AssetDetailPage.qml" line="190"/>
@@ -617,7 +617,7 @@
     <message id="assetDetailPage.removingFromAlbum">
         <location filename="../qml/pages/AssetDetailPage.qml" line="378"/>
         <source>Removing from album</source>
-        <translation type="unfinished"></translation>
+        <translation>Fjerner fra album</translation>
     </message>
     <message id="assetDetailPage.addedAssetToFavorites">
         <location filename="../qml/pages/AssetDetailPage.qml" line="437"/>
@@ -633,7 +633,7 @@
         <location filename="../qml/pages/AssetDetailPage.qml" line="445"/>
         <source>Downloaded to: %1</source>
         <oldsource>Downloaded: %1</oldsource>
-        <translation type="unfinished">Lastet ned: %1</translation>
+        <translation>Lastet ned til: %1</translation>
     </message>
     <message id="assetInfoPage.editAsset">
         <location filename="../qml/pages/AssetInfoPage.qml" line="18"/>
@@ -785,12 +785,12 @@
     <message id="memoryDetailPage.releaseToClose">
         <location filename="../qml/pages/MemoryDetailPage.qml" line="82"/>
         <source>Release to close</source>
-        <translation type="unfinished"></translation>
+        <translation>Slipp for å lukke</translation>
     </message>
     <message id="memoryDetailPage.dragToClose">
         <location filename="../qml/pages/MemoryDetailPage.qml" line="84"/>
         <source>Drag to close</source>
-        <translation type="unfinished"></translation>
+        <translation>Sveip for å lukke</translation>
     </message>
     <message id="memoryDetailPage.assetCounter">
         <location filename="../qml/pages/MemoryDetailPage.qml" line="330"/>
@@ -1341,157 +1341,157 @@
     <message id="settingsPage.cover">
         <location filename="../qml/pages/SettingsPage.qml" line="190"/>
         <source>Cover</source>
-        <translation type="unfinished"></translation>
+        <translation>Forsidebilde</translation>
     </message>
     <message id="settingsPage.coverShowAssets">
         <location filename="../qml/pages/SettingsPage.qml" line="195"/>
         <source>Show assets on cover</source>
-        <translation type="unfinished"></translation>
+        <translation>Vis antall objekter i forsidebildet</translation>
     </message>
     <message id="settingsPage.coverShowAssetsInfo">
         <location filename="../qml/pages/SettingsPage.qml" line="197"/>
         <source>Display photos on the app cover instead of the default icon.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vis bilder i applikasjonens forsidebilde i stedet for standardikonet.</translation>
     </message>
     <message id="settingsPage.coverSlideshow">
         <location filename="../qml/pages/SettingsPage.qml" line="206"/>
         <source>Slideshow rotation</source>
-        <translation type="unfinished"></translation>
+        <translation>Rotasjon for lysbildefremvisning</translation>
     </message>
     <message id="settingsPage.coverSlideshowInfo">
         <location filename="../qml/pages/SettingsPage.qml" line="208"/>
         <source>Continuously rotate through images while the cover is visible. When off, the image changes only once when the app is minimized.</source>
-        <translation type="unfinished"></translation>
+        <translation>Roter bildene kontinuerlig mens forsidebildet er synlig. Når det er slått av, endres bildet bare én gang når appen minimeres.</translation>
     </message>
     <message id="settingsPage.downloads">
         <location filename="../qml/pages/SettingsPage.qml" line="218"/>
         <source>Downloads</source>
-        <translation type="unfinished"></translation>
+        <translation>Nedlastinger</translation>
     </message>
     <message id="settingsPage.downloadsFolder">
         <location filename="../qml/pages/SettingsPage.qml" line="223"/>
         <source>Downloads folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Nedlastingsmappe</translation>
     </message>
     <message id="settingsPage.downloadsFolderInfo">
         <location filename="../qml/pages/SettingsPage.qml" line="226"/>
         <source>Folder where downloaded photos and videos will be saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mappe hvor nedlastede bilder og videoer blir lagret.</translation>
     </message>
     <message id="settingsPage.backup">
         <location filename="../qml/pages/SettingsPage.qml" line="234"/>
         <source>Backup</source>
-        <translation type="unfinished"></translation>
+        <translation>Sikkerhetskopi</translation>
     </message>
     <message id="settingsPage.backupEnabled">
         <location filename="../qml/pages/SettingsPage.qml" line="239"/>
         <source>Automatic backup</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatisk sikkerhetskopiering</translation>
     </message>
     <message id="settingsPage.backupEnabledInfo">
         <location filename="../qml/pages/SettingsPage.qml" line="241"/>
         <source>Automatically back up photos and videos from selected folders to your Immich server.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sikkerhetskopier bilder og videoer fra valgte mapper automatisk til din Immich-server.</translation>
     </message>
     <message id="settingsPage.backingUp">
         <location filename="../qml/pages/SettingsPage.qml" line="273"/>
         <source>Backing up: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Sikkerhetskopierer: %1</translation>
     </message>
     <message id="settingsPage.backupActive">
         <location filename="../qml/pages/SettingsPage.qml" line="277"/>
         <source>Backup active</source>
-        <translation type="unfinished"></translation>
+        <translation>Sikkerhetskopiering aktiv</translation>
     </message>
     <message id="settingsPage.backupIdle">
         <location filename="../qml/pages/SettingsPage.qml" line="280"/>
         <source>Backup idle</source>
-        <translation type="unfinished"></translation>
+        <translation>Sikkerhetskopiering inaktiv</translation>
     </message>
     <message id="settingsPage.backedUpCount">
         <location filename="../qml/pages/SettingsPage.qml" line="315"/>
         <source>Backed up: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Sikkerhetskopiert: %1</translation>
     </message>
     <message id="settingsPage.pendingCount">
         <location filename="../qml/pages/SettingsPage.qml" line="322"/>
         <source>Pending: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Venter: %1</translation>
     </message>
     <message id="settingsPage.failedCount">
         <location filename="../qml/pages/SettingsPage.qml" line="329"/>
         <source>Failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Feilet: %1</translation>
     </message>
     <message id="settingsPage.watchedFolders">
         <location filename="../qml/pages/SettingsPage.qml" line="359"/>
         <source>Watched folders</source>
-        <translation type="unfinished"></translation>
+        <translation>Overvåkede mapper</translation>
     </message>
     <message id="settingsPage.foldersSelected">
         <location filename="../qml/pages/SettingsPage.qml" line="366"/>
         <source>%1 folder(s) selected</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 mappe(r) valgt</translation>
     </message>
     <message id="settingsPage.backupPhotosOnCellular">
         <location filename="../qml/pages/SettingsPage.qml" line="377"/>
         <source>Back up photos on cellular</source>
-        <translation type="unfinished"></translation>
+        <translation>Sikkerhetskopier bilder over mobilnett</translation>
     </message>
     <message id="settingsPage.backupPhotosOnCellularInfo">
         <location filename="../qml/pages/SettingsPage.qml" line="379"/>
         <source>Allow photo backup when not connected to Wi-Fi.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tillat sikkerhetskopiering av bilder når du ikke er koblet til Wi-Fi.</translation>
     </message>
     <message id="settingsPage.backupVideosOnCellular">
         <location filename="../qml/pages/SettingsPage.qml" line="389"/>
         <source>Back up videos on cellular</source>
-        <translation type="unfinished"></translation>
+        <translation>Sikkerhetskopier videoer over mobilnett</translation>
     </message>
     <message id="settingsPage.backupVideosOnCellularInfo">
         <location filename="../qml/pages/SettingsPage.qml" line="391"/>
         <source>Allow video backup when not connected to Wi-Fi.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tillat sikkerhetskopiering av videoer når du ikke er koblet til Wi-Fi.</translation>
     </message>
     <message id="settingsPage.backupOnlyWhileCharging">
         <location filename="../qml/pages/SettingsPage.qml" line="401"/>
         <source>Only while charging</source>
-        <translation type="unfinished"></translation>
+        <translation>Bare under lading</translation>
     </message>
     <message id="settingsPage.backupOnlyWhileChargingInfo">
         <location filename="../qml/pages/SettingsPage.qml" line="403"/>
         <source>Only run backup when the device is connected to a charger.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sikkerhetskopier kun når enheten er koblet til en lader.</translation>
     </message>
     <message id="settingsPage.backupDeleteAfter">
         <location filename="../qml/pages/SettingsPage.qml" line="413"/>
         <source>Delete after backup</source>
-        <translation type="unfinished"></translation>
+        <translation>Slett etter sikkerhetskopiering</translation>
     </message>
     <message id="settingsPage.backupDeleteAfterInfo">
         <location filename="../qml/pages/SettingsPage.qml" line="415"/>
         <source>Remove photos and videos from device after successful backup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Slett bilder og videoer fra enheten når de er sikkerhetskopiert.</translation>
     </message>
     <message id="settingsPage.backupAutoDisable">
         <location filename="../qml/pages/SettingsPage.qml" line="425"/>
         <source>Auto-disable after backup</source>
-        <translation type="unfinished"></translation>
+        <translation>Deaktiver automatisk etter sikkerhetskopiering</translation>
     </message>
     <message id="settingsPage.backupAutoDisableInfo">
         <location filename="../qml/pages/SettingsPage.qml" line="427"/>
         <source>Automatically turn off backup after all pending files have been uploaded.</source>
-        <translation type="unfinished"></translation>
+        <translation>Slå av sikkerhetskopiering automatisk når alle ventende filer er lastet opp.</translation>
     </message>
     <message id="settingsPage.backupScanInterval">
         <location filename="../qml/pages/SettingsPage.qml" line="450"/>
         <source>Scan interval</source>
-        <translation type="unfinished"></translation>
+        <translation>Skanningsintervall</translation>
     </message>
     <message id="settingsPage.backupScanIntervalInfo">
         <location filename="../qml/pages/SettingsPage.qml" line="452"/>
         <source>How often to scan for new files. Shorter intervals may impact battery life.</source>
-        <translation type="unfinished"></translation>
+        <translation>Angi skanningsintervall for nye filer. Hyppig skanning bruker mer batteri.</translation>
     </message>
     <message id="settingsPage.backupScanInterval30">
         <location filename="../qml/pages/SettingsPage.qml" line="463"/>
@@ -1516,47 +1516,47 @@
     <message id="settingsPage.backupFromDate">
         <location filename="../qml/pages/SettingsPage.qml" line="488"/>
         <source>Back up files from</source>
-        <translation type="unfinished"></translation>
+        <translation>Sikkerhetskopier filer fra</translation>
     </message>
     <message id="settingsPage.backupFromDateAll">
         <location filename="../qml/pages/SettingsPage.qml" line="490"/>
         <source>All files (no limit)</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle filer (ingen begrensning)</translation>
     </message>
     <message id="settingsPage.backupFromDateInfo">
         <location filename="../qml/pages/SettingsPage.qml" line="510"/>
         <source>Only back up files modified after this date. Long press to clear.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sikkerhetskopier kun filer som er endret etter denne datoen. Hold inne for å nullstille.</translation>
     </message>
     <message id="settingsPage.backupSkipVerification">
         <location filename="../qml/pages/SettingsPage.qml" line="437"/>
         <source>Skip asset verification</source>
-        <translation type="unfinished"></translation>
+        <translation>Hopp over filverifisering</translation>
     </message>
     <message id="settingsPage.backupSkipVerificationInfo">
         <location filename="../qml/pages/SettingsPage.qml" line="439"/>
         <source>Skip checking of assets against the server before uploading. Faster scanning, but duplicates are only detected by the server during upload.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hopp over sjekk av filer mot serveren før opplasting. Dette gir raskere skanning, men duplikater oppdages først av serveren under selve opplastingen.</translation>
     </message>
     <message id="settingsPage.backupScanNow">
         <location filename="../qml/pages/SettingsPage.qml" line="523"/>
         <source>Scan now</source>
-        <translation type="unfinished"></translation>
+        <translation>Skann nå</translation>
     </message>
     <message id="settingsPage.backupRetryFailed">
         <location filename="../qml/pages/SettingsPage.qml" line="529"/>
         <source>Retry failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Nytt forsøk feilet</translation>
     </message>
     <message id="settingsPage.backupClearDb">
         <location filename="../qml/pages/SettingsPage.qml" line="540"/>
         <source>Clear backup database</source>
-        <translation type="unfinished"></translation>
+        <translation>Nullstill sikkerhetskopidatabasen</translation>
     </message>
     <message id="settingsPage.backupClearDbRemorse">
         <location filename="../qml/pages/SettingsPage.qml" line="544"/>
         <source>Clearing backup database</source>
-        <translation type="unfinished"></translation>
+        <translation>Nullstiller sikkerhetskopidatabasen</translation>
     </message>
     <message id="settingsPage.account">
         <location filename="../qml/pages/SettingsPage.qml" line="552"/>
@@ -1687,149 +1687,149 @@
         <location filename="../qml/pages/SettingsPage.qml" line="731"/>
         <source>Verified: %1 already on server, %2 new to upload</source>
         <oldsource>Server check: %1 already backed up, %2 pending</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Verifisert: %1 finnes allerede på serveren, %2 nye skal lastes opp</translation>
     </message>
     <message id="settingsPage.dbCleared">
         <location filename="../qml/pages/SettingsPage.qml" line="735"/>
         <source>Backup database cleared</source>
-        <translation type="unfinished"></translation>
+        <translation>Sikkerhetskopidatabasen er tømt</translation>
     </message>
     <message id="settingsPage.mediaTypesFetchFailed">
         <location filename="../qml/pages/SettingsPage.qml" line="739"/>
         <source>Could not fetch supported media types from server. Backup disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunne ikke hente støttede medietyper fra serveren. Sikkerhetskopiering er deaktivert.</translation>
     </message>
     <message id="sharePage.removingUser">
         <location filename="../qml/pages/SharePage.qml" line="70"/>
         <source>Removing user</source>
-        <translation type="unfinished"></translation>
+        <translation>Fjerner bruker</translation>
     </message>
     <message id="sharePage.leavingAlbum">
         <location filename="../qml/pages/SharePage.qml" line="77"/>
         <source>Leaving album</source>
-        <translation type="unfinished"></translation>
+        <translation>Forlater album</translation>
     </message>
     <message id="sharePage.shareAlbum">
         <location filename="../qml/pages/SharePage.qml" line="113"/>
         <source>Share Album</source>
-        <translation type="unfinished"></translation>
+        <translation>Del album</translation>
     </message>
     <message id="sharePage.createShareLink">
         <location filename="../qml/pages/SharePage.qml" line="115"/>
         <source>Create Share Link</source>
         <oldsource>Create Share link</oldsource>
-        <translation type="unfinished">Opprett delingslenke</translation>
+        <translation>Opprett delingslenke</translation>
     </message>
     <message id="sharePage.albumSettings">
         <location filename="../qml/pages/SharePage.qml" line="371"/>
         <source>Album settings</source>
         <oldsource>Album Settings</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Innstillinger for album</translation>
     </message>
     <message id="sharePage.commentsAndLikes">
         <location filename="../qml/pages/SharePage.qml" line="379"/>
         <source>Comments and likes</source>
-        <translation type="unfinished"></translation>
+        <translation>Kommentarer og likerklikk</translation>
     </message>
     <message id="sharePage.commentsAndLikesInfo">
         <location filename="../qml/pages/SharePage.qml" line="381"/>
         <source>Allow comments and likes on this album</source>
-        <translation type="unfinished"></translation>
+        <translation>Tillat kommentarer og likerklikk for dette albumet</translation>
     </message>
     <message id="sharePage.albumAccessOwner">
         <location filename="../qml/pages/SharePage.qml" line="124"/>
         <source>Manage album members here. Public share links are configured separately below.</source>
-        <translation type="unfinished"></translation>
+        <translation>Administrer albummedlemmer her. Offentlige delingslenker konfigureres separat nedenfor.</translation>
     </message>
     <message id="sharePage.albumAccessNotOwner">
         <location filename="../qml/pages/SharePage.qml" line="126"/>
         <source>Album membership is managed separately from the optional public share link below.</source>
-        <translation type="unfinished"></translation>
+        <translation>Medlemskap i albumet administreres uavhengig fra den valgfrie offentlige delingslenken nedenfor.</translation>
     </message>
     <message id="sharePage.albumMembers">
         <location filename="../qml/pages/SharePage.qml" line="134"/>
         <source>Album members</source>
-        <translation type="unfinished"></translation>
+        <translation>Albummedlemmer</translation>
     </message>
     <message id="sharePage.you">
         <location filename="../qml/pages/SharePage.qml" line="167"/>
         <source> (you)</source>
-        <translation type="unfinished"></translation>
+        <translation> (deg)</translation>
     </message>
     <message id="sharePage.roleEditor">
         <location filename="../qml/pages/SharePage.qml" line="176"/>
         <source>Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Redigerer</translation>
     </message>
     <message id="sharePage.roleViewer">
         <location filename="../qml/pages/SharePage.qml" line="178"/>
         <source>Viewer</source>
-        <translation type="unfinished"></translation>
+        <translation>Seer</translation>
     </message>
     <message id="sharePage.changeToViewer">
         <location filename="../qml/pages/SharePage.qml" line="191"/>
         <source>Change to viewer</source>
-        <translation type="unfinished"></translation>
+        <translation>Endre til seer</translation>
     </message>
     <message id="sharePage.changeToEditor">
         <location filename="../qml/pages/SharePage.qml" line="193"/>
         <source>Change to editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Endre til redigerer</translation>
     </message>
     <message id="sharePage.removeFromAlbum">
         <location filename="../qml/pages/SharePage.qml" line="201"/>
         <source>Remove from album</source>
-        <translation type="unfinished"></translation>
+        <translation>Fjern fra album</translation>
     </message>
     <message id="sharePage.leaveAlbum">
         <location filename="../qml/pages/SharePage.qml" line="233"/>
         <source>Leave album</source>
-        <translation type="unfinished"></translation>
+        <translation>Forlat album</translation>
     </message>
     <message id="sharePage.addUsersSection">
         <location filename="../qml/pages/SharePage.qml" line="243"/>
         <source>Add users</source>
-        <translation type="unfinished">Legg til brukere</translation>
+        <translation>Legg til brukere</translation>
     </message>
     <message id="sharePage.noUsers">
         <location filename="../qml/pages/SharePage.qml" line="262"/>
         <source>No users available to add</source>
-        <translation type="unfinished">Ingen brukere tilgjengelig for å legges til</translation>
+        <translation>Ingen brukere tilgjengelig for å legges til</translation>
     </message>
     <message id="sharePage.role">
         <location filename="../qml/pages/SharePage.qml" line="345"/>
         <source>Role</source>
-        <translation type="unfinished"></translation>
+        <translation>Rolle</translation>
     </message>
     <message id="sharePage.roleEditorOption">
         <location filename="../qml/pages/SharePage.qml" line="350"/>
         <source>Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Redigerer</translation>
     </message>
     <message id="sharePage.roleViewerOption">
         <location filename="../qml/pages/SharePage.qml" line="352"/>
         <source>Viewer</source>
-        <translation type="unfinished"></translation>
+        <translation>Seer</translation>
     </message>
     <message id="sharePage.addSelected">
         <location filename="../qml/pages/SharePage.qml" line="364"/>
         <source>Add selected users</source>
-        <translation type="unfinished">Legg til valgte brukere</translation>
+        <translation>Legg til valgte brukere</translation>
     </message>
     <message id="sharePage.publicShareLinkSection">
         <location filename="../qml/pages/SharePage.qml" line="393"/>
         <source>Share link</source>
-        <translation type="unfinished"></translation>
+        <translation>Del lenke</translation>
     </message>
     <message id="sharePage.publicShareLink">
         <location filename="../qml/pages/SharePage.qml" line="402"/>
         <source>These settings apply only to the generated public share link.</source>
-        <translation type="unfinished"></translation>
+        <translation>Disse innstillingene gjelder kun for den genererte offentlige delingslenken.</translation>
     </message>
     <message id="sharePage.description">
         <location filename="../qml/pages/SharePage.qml" line="412"/>
         <source>Description</source>
-        <translation type="unfinished">Beskrivelse</translation>
+        <translation>Beskrivelse</translation>
     </message>
     <message id="sharePage.password">
         <location filename="../qml/pages/SharePage.qml" line="420"/>
@@ -1844,12 +1844,12 @@
     <message id="sharePage.customShareUrl">
         <location filename="../qml/pages/SharePage.qml" line="433"/>
         <source>Custom share URL</source>
-        <translation type="unfinished"></translation>
+        <translation>Egendefinert delingslenke</translation>
     </message>
     <message id="sharePage.customShareUrlPlaceholder">
         <location filename="../qml/pages/SharePage.qml" line="435"/>
         <source>Optional custom URL slug</source>
-        <translation type="unfinished"></translation>
+        <translation>Valgfri egendefinert adresseending</translation>
     </message>
     <message id="sharePage.expiration">
         <location filename="../qml/pages/SharePage.qml" line="456"/>
@@ -1904,12 +1904,12 @@
     <message id="sharePage.showMetadata">
         <location filename="../qml/pages/SharePage.qml" line="493"/>
         <source>Show metadata</source>
-        <translation type="unfinished"></translation>
+        <translation>Vis metadata</translation>
     </message>
     <message id="sharePage.showMetadataDescription">
         <location filename="../qml/pages/SharePage.qml" line="495"/>
         <source>Recipients can view metadata for shared assets</source>
-        <translation type="unfinished"></translation>
+        <translation>Mottakere kan se detaljer om delte bilder og videoer</translation>
     </message>
     <message id="sharePage.allowDownload">
         <location filename="../qml/pages/SharePage.qml" line="508"/>
@@ -1955,7 +1955,7 @@
     <message id="sharePage.customShareUrlError">
         <location filename="../qml/pages/SharePage.qml" line="592"/>
         <source>Please enter a valid custom share URL</source>
-        <translation type="unfinished"></translation>
+        <translation>Oppgi en gyldig nettadresse for deling</translation>
     </message>
     <message id="shareResultPage.copyToClipboard">
         <location filename="../qml/pages/ShareResultPage.qml" line="17"/>
@@ -2036,7 +2036,7 @@
         <location filename="../qml/pages/VideoPlayerPage.qml" line="345"/>
         <source>Downloaded to: %1</source>
         <oldsource>Downloaded: %1</oldsource>
-        <translation type="unfinished">Lastet ned: %1</translation>
+        <translation>Lastet ned til: %1</translation>
     </message>
     <message id="oauthPage.oauthLogin">
         <location filename="../qml/pages/OAuthPage.qml" line="24"/>
@@ -2076,7 +2076,7 @@
     <message id="timelinePage.upload">
         <location filename="../qml/pages/TimelinePage.qml" line="106"/>
         <source>Upload</source>
-        <translation type="unfinished"></translation>
+        <translation>Last opp</translation>
     </message>
     <message id="timelinePage.refresh">
         <location filename="../qml/pages/TimelinePage.qml" line="112"/>
@@ -2166,12 +2166,12 @@
     <message id="timelinePage.stackCreated">
         <location filename="../qml/pages/TimelinePage.qml" line="604"/>
         <source>Stack created</source>
-        <translation type="unfinished"></translation>
+        <translation>Stabel opprettet</translation>
     </message>
     <message id="timelinePage.stackDeleted">
         <location filename="../qml/pages/TimelinePage.qml" line="609"/>
         <source>Stack removed</source>
-        <translation type="unfinished"></translation>
+        <translation>Stabel fjernet</translation>
     </message>
     <message id="timelinePage.downloaded">
         <location filename="../qml/pages/TimelinePage.qml" line="572"/>
@@ -2211,7 +2211,7 @@
     <message id="editAlbumDialog.albumThumbnail">
         <location filename="../qml/pages/EditAlbumDialog.qml" line="61"/>
         <source>Album thumbnail</source>
-        <translation type="unfinished"></translation>
+        <translation>Miniatyrbilde for album</translation>
     </message>
     <message id="editAssetDialog.title">
         <location filename="../qml/pages/EditAssetDialog.qml" line="32"/>
@@ -2301,83 +2301,83 @@
     <message id="folderPickerPage.accept">
         <location filename="../qml/pages/FolderPickerPage.qml" line="92"/>
         <source>Backup Folders</source>
-        <translation type="unfinished"></translation>
+        <translation>Mapper for sikkerhetskopiering</translation>
     </message>
     <message id="folderPickerPage.suggestedFolders">
         <location filename="../qml/pages/FolderPickerPage.qml" line="97"/>
         <source>Suggested Folders</source>
-        <translation type="unfinished"></translation>
+        <translation>Foreslåtte mapper</translation>
     </message>
     <message id="folderPickerPage.description">
         <location filename="../qml/pages/FolderPickerPage.qml" line="107"/>
         <source>Select folders to watch for automatic backup. Only photos and videos will be backed up.</source>
-        <translation type="unfinished"></translation>
+        <translation>Velg mapper som skal overvåkes for automatisk sikkerhetskopiering. Kun bilder og videoer vil bli sikkerhetskopiert.</translation>
     </message>
     <message id="folderPickerPage.customFolder">
         <location filename="../qml/pages/FolderPickerPage.qml" line="165"/>
         <source>Custom Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Egendefinert mappe</translation>
     </message>
     <message id="folderPickerPage.enterPath">
         <location filename="../qml/pages/FolderPickerPage.qml" line="172"/>
         <source>Enter folder path</source>
-        <translation type="unfinished"></translation>
+        <translation>Oppgi mappebane</translation>
     </message>
     <message id="folderPickerPage.folderPath">
         <location filename="../qml/pages/FolderPickerPage.qml" line="174"/>
         <source>Folder path</source>
-        <translation type="unfinished"></translation>
+        <translation>Mappebane</translation>
     </message>
     <message id="folderPickerPage.selectedFolders">
         <location filename="../qml/pages/FolderPickerPage.qml" line="198"/>
         <source>Selected Folders</source>
-        <translation type="unfinished"></translation>
+        <translation>Valgte mapper</translation>
     </message>
     <message id="uploadPage.cancel">
         <location filename="../qml/pages/UploadPage.qml" line="97"/>
         <source>Cancel upload</source>
-        <translation type="unfinished"></translation>
+        <translation>Avbryt opplasting</translation>
     </message>
     <message id="uploadPage.title">
         <location filename="../qml/pages/UploadPage.qml" line="112"/>
         <source>Upload</source>
-        <translation type="unfinished"></translation>
+        <translation>Last opp</translation>
     </message>
     <message id="uploadPage.addFiles">
         <location filename="../qml/pages/UploadPage.qml" line="137"/>
         <source>Add images or videos</source>
-        <translation type="unfinished"></translation>
+        <translation>Legg til bilder og videoer</translation>
     </message>
     <message id="uploadPage.startUpload">
         <location filename="../qml/pages/UploadPage.qml" line="152"/>
         <source>Start upload (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>start opplasting (%1)</translation>
     </message>
     <message id="uploadPage.progress">
         <location filename="../qml/pages/UploadPage.qml" line="168"/>
         <source>Uploading %1 of %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Laster opp %1 av %2</translation>
     </message>
     <message id="uploadPage.complete">
         <location filename="../qml/pages/UploadPage.qml" line="249"/>
         <source>Upload complete</source>
-        <translation type="unfinished"></translation>
+        <translation>Opplasting fullført</translation>
     </message>
     <message id="uploadPage.successCount">
         <location filename="../qml/pages/UploadPage.qml" line="258"/>
         <source>%1 uploaded</source>
         <oldsource>%1 succeeded</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>%1 lastet opp</translation>
     </message>
     <message id="uploadPage.duplicateCount">
         <location filename="../qml/pages/UploadPage.qml" line="268"/>
         <source>%1 duplicates</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 duplikater</translation>
     </message>
     <message id="uploadPage.failCount">
         <location filename="../qml/pages/UploadPage.qml" line="278"/>
         <source>%1 failed</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 feilet</translation>
     </message>
     <message id="uploadPage.done">
         <location filename="../qml/pages/UploadPage.qml" line="289"/>
@@ -2387,27 +2387,27 @@
     <message id="uploadPage.fileCount">
         <location filename="../qml/pages/UploadPage.qml" line="297"/>
         <source>Files (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Filer (%1)</translation>
     </message>
     <message id="uploadPage.remove">
         <location filename="../qml/pages/UploadPage.qml" line="342"/>
         <source>Remove</source>
-        <translation type="unfinished"></translation>
+        <translation>Fjern</translation>
     </message>
     <message id="uploadPage.selectFiles">
         <location filename="../qml/pages/UploadPage.qml" line="363"/>
         <source>Select files</source>
-        <translation type="unfinished"></translation>
+        <translation>Velg filer</translation>
     </message>
     <message id="stackDetailPage.releaseToClose">
         <location filename="../qml/pages/StackDetailPage.qml" line="123"/>
         <source>Release to close</source>
-        <translation type="unfinished"></translation>
+        <translation>Slipp for å lukke</translation>
     </message>
     <message id="stackDetailPage.dragToClose">
         <location filename="../qml/pages/StackDetailPage.qml" line="125"/>
         <source>Drag to close</source>
-        <translation type="unfinished"></translation>
+        <translation>Sveip for å lukke</translation>
     </message>
     <message id="stackDetailPage.assetCounter">
         <location filename="../qml/pages/StackDetailPage.qml" line="360"/>
@@ -2422,7 +2422,7 @@
     <message id="stackDetailPage.unstacking">
         <location filename="../qml/pages/StackDetailPage.qml" line="505"/>
         <source>Unstacking</source>
-        <translation type="unfinished"></translation>
+        <translation>Spre stabel</translation>
     </message>
     <message id="stackDetailPage.addedToFavorites">
         <location filename="../qml/pages/StackDetailPage.qml" line="589"/>
@@ -2438,46 +2438,46 @@
         <location filename="../qml/pages/StackDetailPage.qml" line="598"/>
         <source>Downloaded to: %1</source>
         <oldsource>Downloaded: %1</oldsource>
-        <translation type="unfinished">Lastet ned: %1</translation>
+        <translation>Lastet ned til: %1</translation>
     </message>
     <message id="downloadFolderDialog.accept">
         <location filename="../qml/components/DownloadFolderDialog.qml" line="36"/>
         <source>Accept</source>
         <oldsource>Download Folder</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Godta</translation>
     </message>
     <message id="downloadFolderDialog.description">
         <location filename="../qml/components/DownloadFolderDialog.qml" line="46"/>
         <source>Select or enter a folder where downloaded photos and videos will be saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>Velg eller skriv inn mappen der nedlastede bilder og videoer skal lagres.</translation>
     </message>
     <message id="downloadFolderDialog.suggestedFolders">
         <location filename="../qml/components/DownloadFolderDialog.qml" line="53"/>
         <source>Suggested Folders</source>
         <oldsource>Suggested folders</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Foreslåtte mapper</translation>
     </message>
     <message id="downloadFolderDialog.customFolder">
         <location filename="../qml/components/DownloadFolderDialog.qml" line="111"/>
         <source>Custom Folder</source>
         <oldsource>Custom folder</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Egendefinert mappe</translation>
     </message>
     <message id="downloadFolderDialog.enterPath">
         <location filename="../qml/components/DownloadFolderDialog.qml" line="118"/>
         <source>Enter folder path</source>
-        <translation type="unfinished"></translation>
+        <translation>Angi mappebane</translation>
     </message>
     <message id="downloadFolderDialog.folderPath">
         <location filename="../qml/components/DownloadFolderDialog.qml" line="120"/>
         <source>Folder path</source>
-        <translation type="unfinished"></translation>
+        <translation>Mappebane</translation>
     </message>
     <message id="downloadFolderDialog.currentSelection">
         <location filename="../qml/components/DownloadFolderDialog.qml" line="144"/>
         <source>Current selection:</source>
         <oldsource>Current selection: </oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Gjeldende utvalg:</translation>
     </message>
 </context>
 </TS>
