@@ -34,6 +34,7 @@ public:
     QString getAccessToken() const;
     Q_INVOKABLE void reloginWithStoredCredentials();
     Q_INVOKABLE void validateToken();
+    void setOAuthCredentials(const QString &serverUrl, const QString &accessToken, const QString &userEmail);
 
 signals:
     void isAuthenticatedChanged();

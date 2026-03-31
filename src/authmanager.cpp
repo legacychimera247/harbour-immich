@@ -179,6 +179,27 @@ void AuthManager::logout()
     emit userIdChanged();
 }
 
+void AuthManager::setOAuthCredentials(const QString &serverUrl, const QString &accessToken, const QString &userEmail)
+{
+    qInfo() << "AuthManager: Setting OAuth credentials for" << userEmail;
+
+    m_serverUrl = serverUrl;
+    m_accessToken = accessToken;
+
+    m_storage->saveServerUrl(serverUrl);
+    m_storage->saveAccessToken(accessToken);
+    m_storage->savePassword(QString());
+
+    if (!userEmail.isEmpty()) {
+        setEmail(userEmail);
+    }
+
+    emit serverUrlChanged();
+    setAuthenticated(true);
+    fetchCurrentUser();
+    emit loginSucceeded();
+}
+
 QString AuthManager::getAccessToken() const
 {
     return m_accessToken;

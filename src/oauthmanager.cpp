@@ -1,6 +1,5 @@
 #include "oauthmanager.h"
 #include "authmanager.h"
-#include "securestorage.h"
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
@@ -15,19 +14,14 @@
 #include <QDateTime>
 #include <QDebug>
 
-OAuthManager::OAuthManager(AuthManager *authManager, SecureStorage *storage, QObject *parent)
+OAuthManager::OAuthManager(AuthManager *authManager, QObject *parent)
    : QObject(parent)
    , m_networkManager(new QNetworkAccessManager(this))
    , m_authManager(authManager)
-   , m_storage(storage)
    , m_oauthEnabled(false)
    , m_busy(false)
 {
     qsrand(static_cast<uint>(QDateTime::currentMSecsSinceEpoch()));
-}
-
-OAuthManager::~OAuthManager()
-{
 }
 
 bool OAuthManager::oauthEnabled() const
@@ -259,15 +253,7 @@ void OAuthManager::onCallbackReplyFinished()
        QString userEmail = obj["userEmail"].toString();
 
        if (!accessToken.isEmpty()) {
-           m_storage->saveAccessToken(accessToken);
-           if (!userEmail.isEmpty()) {
-               m_storage->saveEmail(userEmail);
-           }
-           m_storage->saveServerUrl(serverUrl);
-
-           // Clear any stored password since this is OAuth
-           m_storage->savePassword(QString());
-
+           m_authManager->setOAuthCredentials(serverUrl, accessToken, userEmail);
            emit oauthLoginSucceeded();
        } else {
            emit oauthLoginFailed("No access token received from OAuth callback");

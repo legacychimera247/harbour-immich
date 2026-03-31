@@ -3,12 +3,9 @@
 
 #include <QObject>
 #include <QString>
-#include <QByteArray>
 
 class QNetworkAccessManager;
-class QNetworkReply;
 class AuthManager;
-class SecureStorage;
 
 class OAuthManager : public QObject
 {
@@ -17,8 +14,7 @@ class OAuthManager : public QObject
     Q_PROPERTY(bool busy READ busy NOTIFY busyChanged)
 
 public:
-    explicit OAuthManager(AuthManager *authManager, SecureStorage *storage, QObject *parent = nullptr);
-    ~OAuthManager();
+    explicit OAuthManager(AuthManager *authManager, QObject *parent = nullptr);
 
     bool oauthEnabled() const;
     bool busy() const;
@@ -44,7 +40,6 @@ private slots:
 private:
     QNetworkAccessManager *m_networkManager;
     AuthManager *m_authManager;
-    SecureStorage *m_storage;
     QString m_serverUrl;
     QString m_codeVerifier;
     QString m_state;

@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
    secureStorage->initialize();
 
    AuthManager *authManager = new AuthManager(secureStorage, app);
-   OAuthManager *oauthManager = new OAuthManager(authManager, secureStorage, app);
+   OAuthManager *oauthManager = new OAuthManager(authManager, app);
 
    QLocalServer *localServer = new QLocalServer(app);
    QLocalServer::removeServer(serverName);

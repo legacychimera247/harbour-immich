@@ -63,9 +63,6 @@ Page {
 
     Connections {
         target: oauthManager
-        onOauthLoginSucceeded: {
-            authManager.checkStoredCredentials()
-        }
         onOauthLoginFailed: {
             pageStack.pop()
         }

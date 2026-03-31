@@ -1,7 +1,7 @@
 TARGET = harbour-immich
 
 CONFIG += sailfishapp link_pkgconfig
-QT += network multimedia sql dbus
+QT += network multimedia sql
 PKGCONFIG += sailfishsecrets sailfishapp
 INCLUDEPATH += /usr/include/Sailfish
 
