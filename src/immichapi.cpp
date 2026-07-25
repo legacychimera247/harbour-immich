@@ -1170,6 +1170,28 @@ void ImmichApi::restoreAllTrash()
     });
 }
 
+void ImmichApi::updatePerson(const QString &personId, const QString &name, const QString &birthDate)
+{
+    qInfo() << "ImmichApi: Updating person:" << personId << "name:" << name;
+    QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/people/") + personId);
+    QNetworkRequest request = createAuthenticatedRequest(url);
+
+    QJsonObject json;
+    json["name"] = name;
+    if (!birthDate.isEmpty()) {
+        json["birthDate"] = birthDate;
+    } else {
+        json["birthDate"] = QJsonValue::Null;
+    }
+
+    QJsonDocument doc(json);
+    QNetworkReply *reply = m_networkManager->put(request, doc.toJson());
+    QString savedId = personId;
+    connectReply(reply, [this, savedId](const QByteArray &) {
+        emit personUpdated(savedId);
+    });
+}
+
 void ImmichApi::fetchCities()
 {
     qInfo() << "ImmichApi: Fetching cities";
