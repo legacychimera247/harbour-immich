@@ -58,10 +58,7 @@ void SecureStorage::storeSecret(const QString &name, const QString &value)
    // First delete any existing secret with this name (to allow updates)
    DeleteSecretRequest *deleteRequest = new DeleteSecretRequest(this);
    deleteRequest->setManager(&m_secretManager);
-   deleteRequest->setIdentifier(Secret::Identifier(
-       name,
-       m_collectionName,
-       SecretManager::DefaultEncryptedStoragePluginName));
+   deleteRequest->setIdentifier(Secret::Identifier(name, m_collectionName, SecretManager::DefaultEncryptedStoragePluginName));
    deleteRequest->setUserInteractionMode(SecretManager::SystemInteraction);
 
    connect(deleteRequest, &DeleteSecretRequest::statusChanged, this, [this, deleteRequest, name, value]() {
@@ -69,10 +66,7 @@ void SecureStorage::storeSecret(const QString &name, const QString &value)
            deleteRequest->deleteLater();
 
            // Now store the new secret
-           Secret secret(Secret::Identifier(
-               name,
-               m_collectionName,
-               SecretManager::DefaultEncryptedStoragePluginName));
+           Secret secret(Secret::Identifier(name, m_collectionName, SecretManager::DefaultEncryptedStoragePluginName));
            secret.setData(value.toUtf8());
            secret.setType(Secret::TypeBlob);
 
@@ -102,10 +96,7 @@ QString SecureStorage::getSecret(const QString &name) const
 {
    StoredSecretRequest request;
    request.setManager(const_cast<SecretManager*>(&m_secretManager));
-   request.setIdentifier(Secret::Identifier(
-       name,
-       m_collectionName,
-       SecretManager::DefaultEncryptedStoragePluginName));
+   request.setIdentifier(Secret::Identifier(name, m_collectionName, SecretManager::DefaultEncryptedStoragePluginName));
    request.setUserInteractionMode(SecretManager::SystemInteraction);
 
    // Use event loop for synchronous retrieval
@@ -133,10 +124,7 @@ void SecureStorage::deleteSecret(const QString &name)
 {
    DeleteSecretRequest *request = new DeleteSecretRequest(this);
    request->setManager(&m_secretManager);
-   request->setIdentifier(Secret::Identifier(
-       name,
-       m_collectionName,
-       SecretManager::DefaultEncryptedStoragePluginName));
+   request->setIdentifier(Secret::Identifier(name, m_collectionName, SecretManager::DefaultEncryptedStoragePluginName));
    request->setUserInteractionMode(SecretManager::SystemInteraction);
 
    connect(request, &DeleteSecretRequest::statusChanged, this, [request]() {

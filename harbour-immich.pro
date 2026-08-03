@@ -50,6 +50,7 @@ INSTALLS += icons
 DISTFILES += qml/harbour-immich.qml \
     qml/components/AssetGridItem.qml \
     qml/components/AssetGroupHelper.js \
+    qml/components/EditPersonDialog.qml \
     qml/components/EmptyState.qml \
     qml/components/FilterHelper.js \
     qml/components/GroupedAssetGrid.qml \
@@ -90,6 +91,8 @@ DISTFILES += qml/harbour-immich.qml \
     qml/pages/FoldersPage.qml \
     qml/pages/LibraryPage.qml \
     qml/pages/LockedFolderPage.qml \
+    qml/pages/PeoplePage.qml \
+    qml/pages/PersonDetailPage.qml \
     qml/pages/PlaceDetailPage.qml \
     qml/pages/PlacesPage.qml \
     qml/pages/SearchPage.qml \
