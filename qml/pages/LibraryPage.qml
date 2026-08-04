@@ -61,7 +61,7 @@ Page {
                         //% "Trash"
                         { title: qsTrId("libraryPage.trash"), icon: "image://theme/icon-m-delete", page: "TrashPage.qml", show: true },
                         //% "People"
-                        { title: qsTrId("libraryPage.people"), icon: "image://theme/icon-m-people", page: "PeoplePage.qml", show: false },
+                        { title: qsTrId("libraryPage.people"), icon: "image://theme/icon-m-people", page: "PeoplePage.qml", show: true },
                         //% "Places"
                         { title: qsTrId("libraryPage.places"), icon: "image://theme/icon-m-location", page: "PlacesPage.qml", show: true },
                         //% "On This Device"
