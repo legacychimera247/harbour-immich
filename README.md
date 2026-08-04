@@ -58,7 +58,7 @@ Project website: https://immich.app
 ## Installation
 
 ### From Harbour
-Install directly via Jolla Harbour. Please note that due to the Jolla Harbour limitations OIDC login is disabled.
+Install directly via Jolla Harbour. Please note that due to the Jolla Harbour limitations OIDC login is disabled (if you require it install from other sources below).
 
 ### From Chum
 Install directly from Chum.
