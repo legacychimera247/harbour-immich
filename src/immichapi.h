@@ -51,7 +51,6 @@ public:
     Q_INVOKABLE void fetchTimelineBuckets(const QString &context, const QVariantMap &params);
     Q_INVOKABLE void fetchTimelineBucket(const QString &context, const QString &timeBucket, const QVariantMap &params);
     Q_INVOKABLE QString serverUrl() const;
-    Q_INVOKABLE void setVideoSource(QObject *videoItem, const QString &assetId);
     Q_INVOKABLE void bulkUploadCheck(const QJsonArray &assets);
     Q_INVOKABLE void getStack(const QString &stackId);
     Q_INVOKABLE void createStack(const QStringList &assetIds);

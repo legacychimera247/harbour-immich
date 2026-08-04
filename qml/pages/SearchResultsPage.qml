@@ -122,23 +122,14 @@ Page {
                    page.toggleAssetSelection(model.assetId)
                } else {
                    buildAssetsArray()
-                   if (isVideo) {
-                       pageStack.push(Qt.resolvedUrl("VideoPlayerPage.qml"), {
-                           videoId: assetId,
-                           isFavorite: isFavorite,
-                           currentIndex: index,
-                           albumAssets: searchAssets
-                       })
-                   } else {
-                       pageStack.push(Qt.resolvedUrl("AssetDetailPage.qml"), {
-                           assetId: assetId,
-                           isFavorite: isFavorite,
-                           isVideo: isVideo,
-                           thumbhash: model.thumbhash || "",
-                           currentIndex: index,
-                           albumAssets: searchAssets
-                       })
-                   }
+                   pageStack.push(Qt.resolvedUrl("AssetDetailPage.qml"), {
+                       assetId: assetId,
+                       isFavorite: isFavorite,
+                       isVideo: isVideo,
+                       thumbhash: model.thumbhash || "",
+                       currentIndex: index,
+                       albumAssets: searchAssets
+                   })
                }
            }
 

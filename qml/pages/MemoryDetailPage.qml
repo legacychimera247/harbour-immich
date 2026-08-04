@@ -10,6 +10,9 @@ Page {
     property int currentIndex: 0
     property bool slideshowRunning: false
 
+    property var currentAsset: (assets && currentIndex >= 0 && currentIndex < assets.length) ? assets[currentIndex] : null
+    property bool currentIsVideo: currentAsset ? (currentAsset.isVideo || false) : false
+
     property bool showingA: true
     property bool crossfading: false
 
@@ -30,6 +33,12 @@ Page {
 
     function crossfadeTo(newIndex) {
         if (!assets || assets.length === 0) return
+        if (assets[newIndex] && assets[newIndex].isVideo) {
+            slideshowRunning = false
+            switchTo(newIndex)
+            return
+        }
+        videoPlayer.active = false
         var newSource = "image://immich/detail/" + assets[newIndex].id
         if (showingA) {
             slideshowImageB.source = newSource
@@ -39,13 +48,18 @@ Page {
             crossfadeToA.start()
         }
         showingA = !showingA
-        currentIndex = newIndex
     }
 
     function switchTo(newIndex) {
         if (!assets || assets.length === 0) return
         crossfadeToA.stop()
         crossfadeToB.stop()
+        currentIndex = newIndex
+        if (assets[newIndex] && assets[newIndex].isVideo) {
+            videoPlayer.active = true
+            return
+        }
+        videoPlayer.active = false
         var newSource = "image://immich/detail/" + assets[newIndex].id
         slideshowImageA.source = newSource
         slideshowImageA.opacity = 1
@@ -70,6 +84,14 @@ Page {
     allowedOrientations: Orientation.All
     backNavigation: false
     backgroundColor: "transparent"
+
+    onStatusChanged: {
+        if (status === PageStatus.Active && currentIsVideo && !videoPlayer.active) {
+            videoPlayer.active = true
+        } else if (status === PageStatus.Deactivating && currentIsVideo) {
+            videoPlayer.pause()
+        }
+    }
 
     // Semi-transparent backdrop that fades during drag
     DismissDragBackdrop {
@@ -146,7 +168,7 @@ Page {
                             memoryTransitionCover.source = ""
                         }
                     }
-                    source: (assets && assets.length > 0 && assets[0]) ? "image://immich/detail/" + assets[0].id : ""
+                    source: (assets && assets.length > 0 && assets[0] && !assets[0].isVideo) ? "image://immich/detail/" + assets[0].id : ""
                 }
 
                 // Slideshow image B (for crossfade)
@@ -219,6 +241,9 @@ Page {
                 totalCount: page.assets ? page.assets.length : 0
                 enableZoom: false
                 wrapAround: true
+                onTapped: {
+                    if (page.currentIsVideo) videoPlayer.toggleControls()
+                }
                 onPrevRequested: {
                     memoryTransitionCover.source = prevImage.source
                     memoryTransitionCover.visible = true
@@ -232,6 +257,24 @@ Page {
                     page.switchTo((page.currentIndex + 1) % page.assets.length)
                 }
                 onDismissRequested: pageStack.pop()
+            }
+        }
+
+        VideoPlayer {
+            id: videoPlayer
+            x: slideOffset
+            width: page.width
+            height: page.height
+            z: 2
+            visible: page.currentIsVideo
+            videoId: page.currentIsVideo && page.currentAsset ? page.currentAsset.id : ""
+            thumbhash: page.currentAsset && page.currentAsset.thumbhash ? page.currentAsset.thumbhash : ""
+            controlsBottomMargin: bottomPanel.height
+            onLoaded: {
+                if (memoryTransitionCover.visible) {
+                    memoryTransitionCover.visible = false
+                    memoryTransitionCover.source = ""
+                }
             }
         }
 

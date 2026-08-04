@@ -23,6 +23,7 @@
 #include "thumbhashprovider.h"
 #include "logmanager.h"
 #include "backupmanager.h"
+#include "videocontroller.h"
 
 int main(int argc, char *argv[])
 {
@@ -103,6 +104,7 @@ int main(int argc, char *argv[])
    }
 #endif
    qmlRegisterType<TimelineModel>("harbour.immich.models", 1, 0, "TimelineModel");
+   qmlRegisterType<VideoController>("harbour.immich.media", 1, 0, "VideoController");
    ImmichApi *immichApi = new ImmichApi(authManager, app);
    AlbumModel *albumModel = new AlbumModel(authManager, app);
    TimelineModel *timelineModel = new TimelineModel(app);

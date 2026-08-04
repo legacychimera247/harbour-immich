@@ -20,6 +20,7 @@ PinchArea {
     signal prevRequested()
     signal nextRequested()
     signal dismissRequested()
+    signal tapped()
 
     property real startScale: 1.0
 
@@ -191,6 +192,8 @@ PinchArea {
                 } else {
                     slideResetAnim.start()
                 }
+            } else if (!gestureDecided) {
+                root.tapped()
             }
 
             gestureDecided = false

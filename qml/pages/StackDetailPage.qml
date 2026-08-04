@@ -21,6 +21,9 @@ Page {
     property int totalTimelineAssets: assetModel ? assetModel.totalCount : 0
     property int pendingTimelineIndex: -1
 
+    property var currentAsset: (assets && currentIndex >= 0 && currentIndex < assets.length) ? assets[currentIndex] : null
+    property bool currentIsVideo: currentAsset ? (currentAsset.isVideo || false) : false
+
     // Zoom + pan state
     property real imageScale: 1.0
     property real panX: 0
@@ -61,7 +64,13 @@ Page {
         assetInfo = null
         var asset = assets[newIndex]
         if (asset) {
-            mainImage.source = asset.id ? "image://immich/detail/" + asset.id : ""
+            if (asset.isVideo) {
+                mainImage.source = ""
+                videoPlayer.active = true
+            } else {
+                videoPlayer.active = false
+                mainImage.source = asset.id ? "image://immich/detail/" + asset.id : ""
+            }
             immichApi.getAssetInfo(asset.id)
         }
     }
@@ -114,6 +123,10 @@ Page {
     allowedOrientations: Orientation.All
     backNavigation: false
     backgroundColor: "transparent"
+
+    onStatusChanged: {
+        if (status === PageStatus.Deactivating && currentIsVideo) videoPlayer.pause()
+    }
 
     // Semi-transparent backdrop
     DismissDragBackdrop {
@@ -236,6 +249,24 @@ Page {
             }
         }
 
+        VideoPlayer {
+            id: videoPlayer
+            x: zoomed ? 0 : slideOffset
+            width: page.width
+            height: page.height
+            z: 2
+            visible: page.currentIsVideo
+            videoId: page.currentIsVideo && page.currentAsset ? page.currentAsset.id : ""
+            thumbhash: page.currentAsset && page.currentAsset.thumbhash ? page.currentAsset.thumbhash : page.primaryThumbhash
+            controlsBottomMargin: bottomPanel.height
+            onLoaded: {
+                if (transitionCover.visible) {
+                    transitionCover.visible = false
+                    transitionCover.source = ""
+                }
+            }
+        }
+
         ZoomSwipeArea {
             anchors.fill: parent
             z: 1
@@ -245,6 +276,10 @@ Page {
             viewportHeight: page.height
             currentIndex: page.timelineAssetIndex
             totalCount: page.totalTimelineAssets
+            enableZoom: !page.currentIsVideo
+            onTapped: {
+                if (page.currentIsVideo) videoPlayer.toggleControls()
+            }
             onPrevRequested: {
                 transitionCover.source = prevImage.source
                 transitionCover.visible = true
@@ -573,10 +608,15 @@ Page {
                             break
                         }
                     }
-                    // Load detail image for current asset
+                    // Load detail image or video for current asset
                     var current = page.getCurrentAsset()
                     if (current) {
-                        mainImage.source = "image://immich/detail/" + current.id
+                        if (current.isVideo) {
+                            mainImage.source = ""
+                            videoPlayer.active = true
+                        } else {
+                            mainImage.source = "image://immich/detail/" + current.id
+                        }
                         immichApi.getAssetInfo(current.id)
                     }
                 }

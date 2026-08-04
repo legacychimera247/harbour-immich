@@ -19,8 +19,6 @@
 #include <QDir>
 #include <QDateTime>
 #include <QTimer>
-#include <QMediaPlayer>
-#include <QMediaContent>
 #include <QLocale>
 
 namespace {
@@ -1020,27 +1018,6 @@ void ImmichApi::fetchTimelineBucket(const QString &context, const QString &timeB
         QJsonObject data = QJsonDocument::fromJson(response).object();
         emit timelineBucketReceived(savedContext, savedTimeBucket, data);
     });
-}
-
-void ImmichApi::setVideoSource(QObject *videoItem, const QString &assetId)
-{
-    if (!videoItem) {
-        qWarning() << "ImmichApi: Value of videoItem is null";
-        return;
-    }
-
-    QMediaPlayer *player = videoItem->findChild<QMediaPlayer*>();
-    if (!player) {
-        qWarning() << "ImmichApi: Could not find QMediaPlayer in video item";
-        return;
-    }
-
-    QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/assets/") + assetId + QStringLiteral("/video/playback"));
-    QNetworkRequest request(url);
-    request.setRawHeader("Authorization", QString("Bearer %1").arg(m_authManager->getAccessToken()).toUtf8());
-
-    qDebug() << "ImmichApi: Setting video source to" << url.toString();
-    player->setMedia(QMediaContent(request));
 }
 
 void ImmichApi::bulkUploadCheck(const QJsonArray &assets)

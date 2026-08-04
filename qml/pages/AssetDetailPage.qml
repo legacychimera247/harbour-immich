@@ -77,23 +77,14 @@ Page {
                 return
             }
 
+            isVideo = asset.isVideo || false
             assetId = asset.id
             isFavorite = asset.isFavorite || false
-            isVideo = asset.isVideo || false
             thumbhash = asset.thumbhash || ""
             currentIndex = assetIndex
 
-            if (isVideo) {
-                pageStack.replace(Qt.resolvedUrl("VideoPlayerPage.qml"), {
-                    videoId: assetId,
-                    isFavorite: isFavorite,
-                    currentIndex: assetIndex,
-                    albumAssets: albumAssets
-                })
-            } else {
-                assetImage.source = "image://immich/detail/" + assetId
-                immichApi.getAssetInfo(assetId)
-            }
+            videoPlayer.active = isVideo
+            immichApi.getAssetInfo(assetId)
         } else {
             console.warn("AssetDetailPage: Invalid asset data at index", assetIndex)
         }
@@ -108,6 +99,14 @@ Page {
     allowedOrientations: Orientation.All
     backNavigation: false
     backgroundColor: "transparent"
+
+    onStatusChanged: {
+        if (status === PageStatus.Active && isVideo && !videoPlayer.active) {
+            videoPlayer.active = true
+        } else if (status === PageStatus.Deactivating && isVideo) {
+            videoPlayer.pause()
+        }
+    }
 
     // Semi-transparent backdrop that fades during drag
     DismissDragBackdrop {
@@ -169,7 +168,7 @@ Page {
                 width: imageViewport.width
                 height: imageViewport.height
                 fillMode: Image.PreserveAspectFit
-                source: assetId ? "image://immich/detail/" + assetId : ""
+                source: (assetId && !isVideo) ? "image://immich/detail/" + assetId : ""
                 asynchronous: true
                 smooth: true
                 scale: imageScale
@@ -226,6 +225,24 @@ Page {
             }
         }
 
+        VideoPlayer {
+            id: videoPlayer
+            x: zoomed ? 0 : slideOffset
+            width: page.width
+            height: page.height
+            z: 2
+            visible: page.isVideo
+            videoId: page.isVideo ? page.assetId : ""
+            thumbhash: page.currentThumbhash
+            controlsBottomMargin: actionBar.height
+            onLoaded: {
+                if (transitionCover.visible) {
+                    transitionCover.visible = false
+                    transitionCover.source = ""
+                }
+            }
+        }
+
         ZoomSwipeArea {
             anchors.fill: parent
             z: 1
@@ -235,6 +252,10 @@ Page {
             viewportHeight: page.height
             currentIndex: page.currentIndex
             totalCount: page.totalAssets
+            enableZoom: !page.isVideo
+            onTapped: {
+                if (page.isVideo) videoPlayer.toggleControls()
+            }
             onPrevRequested: {
                 transitionCover.source = prevImage.source
                 transitionCover.visible = true
@@ -430,15 +451,7 @@ Page {
     }
 
     Component.onCompleted: {
-        if (isVideo) {
-            pageStack.replace(Qt.resolvedUrl("VideoPlayerPage.qml"), {
-                videoId: assetId,
-                isFavorite: isFavorite,
-                currentIndex: currentIndex
-            })
-        } else {
-            immichApi.getAssetInfo(assetId)
-        }
+        immichApi.getAssetInfo(assetId)
     }
 
     Connections {

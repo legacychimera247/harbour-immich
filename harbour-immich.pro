@@ -23,7 +23,8 @@ SOURCES += src/harbour-immich.cpp \
     src/settingsmanager.cpp \
     src/imageprovider.cpp \
     src/thumbhashprovider.cpp \
-    src/timelinemodel.cpp
+    src/timelinemodel.cpp \
+    src/videocontroller.cpp
 
 HEADERS += \
     src/backupdatabase.h \
@@ -37,7 +38,8 @@ HEADERS += \
     src/settingsmanager.h \
     src/imageprovider.h \
     src/thumbhashprovider.h \
-    src/timelinemodel.h
+    src/timelinemodel.h \
+    src/videocontroller.h
 
 icons.files = \
     icons/cover-icon.png \
@@ -68,6 +70,7 @@ DISTFILES += qml/harbour-immich.qml \
     qml/components/TimelineBucketDelegate.qml \
     qml/components/TimelineFilterBar.qml \
     qml/components/TimelineHelper.js \
+    qml/components/VideoPlayer.qml \
     qml/components/ZoomSwipeArea.qml \
     qml/cover/CoverPage.qml \
     qml/pages/AlbumInfoPage.qml \
@@ -103,7 +106,6 @@ DISTFILES += qml/harbour-immich.qml \
     qml/pages/TimelinePage.qml \
     qml/pages/TrashPage.qml \
     qml/pages/UploadPage.qml \
-    qml/pages/VideoPlayerPage.qml \
     icons/cover-icon.png \
     rpm/harbour-immich.spec \
     translations/*.ts \
