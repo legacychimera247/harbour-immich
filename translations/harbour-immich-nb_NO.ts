@@ -2834,111 +2834,111 @@
     <message id="peoplePage.people">
         <location filename="../qml/pages/PeoplePage.qml" line="55"/>
         <source>People</source>
-        <translation type="unfinished">Personer</translation>
+        <translation>Personer</translation>
     </message>
     <message id="peoplePage.filter">
         <location filename="../qml/pages/PeoplePage.qml" line="62"/>
         <source>Filter by name...</source>
-        <translation type="unfinished">Filtrer etter navn...</translation>
+        <translation>Filtrer etter navn...</translation>
     </message>
     <message id="peoplePage.unknown">
         <location filename="../qml/pages/PeoplePage.qml" line="163"/>
         <source>Unknown</source>
-        <translation type="unfinished">Ukjent</translation>
+        <translation>Ukjent</translation>
     </message>
     <message id="peoplePage.showLess">
         <location filename="../qml/pages/PeoplePage.qml" line="189"/>
         <source>Show less</source>
-        <translation type="unfinished">Vis mindre</translation>
+        <translation>Vis mindre</translation>
     </message>
     <message id="peoplePage.showMore">
         <location filename="../qml/pages/PeoplePage.qml" line="191"/>
         <source>Show more (%1 more)</source>
-        <translation type="unfinished">Vis mer (%1 mer)</translation>
+        <translation>Vis mer (%1 mer)</translation>
     </message>
     <message id="peoplePage.loading">
         <location filename="../qml/pages/PeoplePage.qml" line="212"/>
         <source>Loading people...</source>
-        <translation type="unfinished">Laster personer...</translation>
+        <translation>Laster personer...</translation>
     </message>
     <message id="peoplePage.noPeople">
         <location filename="../qml/pages/PeoplePage.qml" line="221"/>
         <source>No people found</source>
-        <translation type="unfinished"></translation>
+        <translation>Ingen personer funnet</translation>
     </message>
     <message id="editPersonDialog.title">
         <location filename="../qml/components/EditPersonDialog.qml" line="19"/>
         <source>Edit Person</source>
-        <translation type="unfinished"></translation>
+        <translation>Rediger person</translation>
     </message>
     <message id="editPersonDialog.name">
         <location filename="../qml/components/EditPersonDialog.qml" line="27"/>
         <location filename="../qml/components/EditPersonDialog.qml" line="29"/>
         <source>Name</source>
-        <translation type="unfinished">Navn</translation>
+        <translation>Navn</translation>
     </message>
     <message id="editPersonDialog.birthday">
         <location filename="../qml/components/EditPersonDialog.qml" line="38"/>
         <source>Birthday</source>
-        <translation type="unfinished"></translation>
+        <translation>Bursdag</translation>
     </message>
     <message id="editPersonDialog.noBirthday">
         <location filename="../qml/components/EditPersonDialog.qml" line="40"/>
         <source>No birthday</source>
-        <translation type="unfinished"></translation>
+        <translation>Ingen bursdag</translation>
     </message>
     <message id="notification.birthdayInFuture">
         <location filename="../qml/components/EditPersonDialog.qml" line="55"/>
         <source>Future date is not allowed for birthday</source>
-        <translation type="unfinished"></translation>
+        <translation>Fremtidig dato er ikke tillatt for fødselsdato</translation>
     </message>
     <message id="editPersonDialog.clearBirthday">
         <location filename="../qml/components/EditPersonDialog.qml" line="65"/>
         <source>Clear birthday</source>
-        <translation type="unfinished"></translation>
+        <translation>Fjern bursdag</translation>
     </message>
     <message id="pullDownMenu.editPerson">
         <location filename="../qml/pages/PersonDetailPage.qml" line="81"/>
         <source>Edit person</source>
-        <translation type="unfinished"></translation>
+        <translation>Rediger person</translation>
     </message>
     <message id="personDetailPage.unknown">
         <location filename="../qml/pages/PersonDetailPage.qml" line="119"/>
         <location filename="../qml/pages/PersonDetailPage.qml" line="155"/>
         <source>Unknown</source>
-        <translation type="unfinished">Ukjent</translation>
+        <translation>Ukjent</translation>
     </message>
     <message id="personDetailPage.asset">
         <location filename="../qml/pages/PersonDetailPage.qml" line="139"/>
         <location filename="../qml/pages/PersonDetailPage.qml" line="171"/>
         <source>1 asset</source>
-        <translation type="unfinished">1 mediefil</translation>
+        <translation>1 mediefil</translation>
     </message>
     <message id="personDetailPage.assets">
         <location filename="../qml/pages/PersonDetailPage.qml" line="141"/>
         <location filename="../qml/pages/PersonDetailPage.qml" line="171"/>
         <source>%1 assets</source>
-        <translation type="unfinished">%1 mediefiler</translation>
+        <translation>%1 mediefiler</translation>
     </message>
     <message id="personDetailPage.loading">
         <location filename="../qml/pages/PersonDetailPage.qml" line="240"/>
         <source>Loading assets...</source>
-        <translation type="unfinished">Laster mediefiler…</translation>
+        <translation>Laster mediefiler…</translation>
     </message>
     <message id="personDetailPage.noAssets">
         <location filename="../qml/pages/PersonDetailPage.qml" line="255"/>
         <source>No assets</source>
-        <translation type="unfinished">Ingen mediefiler</translation>
+        <translation>Ingen mediefiler</translation>
     </message>
     <message id="notification.personUpdated">
         <location filename="../qml/pages/PersonDetailPage.qml" line="357"/>
         <source>Person updated</source>
-        <translation type="unfinished"></translation>
+        <translation>Person oppdatert</translation>
     </message>
     <message id="videoPlayer.failed">
         <location filename="../qml/components/VideoPlayer.qml" line="248"/>
         <source>Failed to load video</source>
-        <translation type="unfinished">Feil ved lasting av video</translation>
+        <translation>Feil ved lasting av video</translation>
     </message>
 </context>
 </TS>
