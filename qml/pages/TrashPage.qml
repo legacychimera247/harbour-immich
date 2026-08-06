@@ -131,7 +131,7 @@ Page {
                 visible: trashModel.totalCount > 0
             }
 
-            TimelineFilterBar {
+            FilterBar {
                 activeFilter: page.activeFilter
                 sortOrder: page.sortOrder
                 showFavorites: page.showFavorites

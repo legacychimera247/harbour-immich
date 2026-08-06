@@ -54,6 +54,7 @@ DISTFILES += qml/harbour-immich.qml \
     qml/components/AssetGroupHelper.js \
     qml/components/EditPersonDialog.qml \
     qml/components/EmptyState.qml \
+    qml/components/FilterBar.qml \
     qml/components/FilterHelper.js \
     qml/components/GroupedAssetGrid.qml \
     qml/components/HeroImageRotator.qml \
@@ -68,7 +69,6 @@ DISTFILES += qml/harbour-immich.qml \
     qml/components/ScrollToTopButton.qml \
     qml/components/SelectionActionBar.qml \
     qml/components/TimelineBucketDelegate.qml \
-    qml/components/TimelineFilterBar.qml \
     qml/components/TimelineHelper.js \
     qml/components/VideoPlayer.qml \
     qml/components/ZoomSwipeArea.qml \

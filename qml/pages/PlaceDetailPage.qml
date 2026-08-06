@@ -179,8 +179,8 @@ Page {
                 }
             }
 
-            TimelineFilterBar {
-                showActiveFilter: false
+            FilterBar {
+                filterModel: null
                 sortOrder: page.sortOrder
                 showFavorites: page.showFavorites
                 onFilterFavorites: {

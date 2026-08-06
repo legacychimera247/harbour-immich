@@ -220,7 +220,7 @@ Page {
                 }
             }
 
-            TimelineFilterBar {
+            FilterBar {
                 activeFilter: page.activeFilter
                 sortOrder: page.sortOrder
                 showFavorites: page.showFavorites

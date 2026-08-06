@@ -6,11 +6,16 @@ Item {
     width: parent.width
     height: Theme.itemSizeExtraSmall + Theme.paddingMedium
 
-    property string activeFilter: "taken"  // taken, created
-    property string sortOrder: "desc"    // desc, asc
+    property var filterModel: [
+        //% "Taken"
+        { id: "taken", label: qsTrId("filterBar.taken"), icon: "image://theme/icon-m-image" },
+        //% "Created"
+        { id: "created", label: qsTrId("filterBar.created"), icon: "image://theme/icon-m-clock" }
+    ]
+    property string activeFilter: filterModel[0].id || null
+    property string sortOrder: "desc" // desc, asc
     property bool showFavorites: false
-    property bool showActiveFilter: true
-    property real filterButtonWidth: (filterRow.width - Theme.paddingSmall - sortButton.width - Theme.paddingMedium) / (showActiveFilter ? 3 : 1)
+    property real filterButtonWidth: (filterRow.width - Theme.paddingSmall - sortButton.width - Theme.paddingMedium) / (filterModel ? 3 : 1)
 
     signal filterActivated(string filter)
     signal filterFavorites(bool showFavorites)
@@ -25,14 +30,9 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         spacing: Theme.paddingSmall
 
-        // Switch between date taken and date added
+        // Switch between filterable values
         Repeater {
-            model: showActiveFilter ? [
-                //% "Taken"
-                { id: "taken", label: qsTrId("timelineFilterBar.taken"), icon: "image://theme/icon-m-image" },
-                //% "Created"
-                { id: "created", label: qsTrId("timelineFilterBar.created"), icon: "image://theme/icon-m-clock" }
-            ] : null
+            model: filterBar.filterModel
 
             BackgroundItem {
                 width: filterBar.filterButtonWidth
@@ -100,7 +100,7 @@ Item {
 
                 Label {
                     //% "Favorites"
-                    text: qsTrId("timelineFilterBar.favorites")
+                    text: qsTrId("filterBar.favorites")
                     font.pixelSize: Theme.fontSizeExtraSmall
                     color: filterBar.showFavorites ? Theme.highlightColor : Theme.primaryColor
                     anchors.verticalCenter: parent.verticalCenter
