@@ -265,24 +265,43 @@ void ImmichApi::searchSmartByParameters(const QVariantMap &searchParams)
     connect(reply, &QNetworkReply::finished, this, &ImmichApi::onSearchByParametersReplyFinished);
 }
 
-void ImmichApi::fetchPeople()
+void ImmichApi::fetchPeople(bool withHidden)
 {
-    qInfo() << "ImmichApi: Fetching people";
+    qInfo() << "ImmichApi: Fetching people, withHidden:" << withHidden;
+    fetchPeoplePage(withHidden, 1, QJsonArray());
+}
+
+void ImmichApi::fetchPeoplePage(bool withHidden, int page, QJsonArray accumulated)
+{
+    const int pageSize = 500;
     QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/people"));
+    QUrlQuery query;
+    query.addQueryItem(QStringLiteral("withHidden"), withHidden ? QStringLiteral("true") : QStringLiteral("false"));
+    query.addQueryItem(QStringLiteral("page"), QString::number(page));
+    query.addQueryItem(QStringLiteral("size"), QString::number(pageSize));
+    url.setQuery(query);
     QNetworkRequest request = createAuthenticatedRequest(url);
     QNetworkReply *reply = m_networkManager->get(request);
-    connectReply(reply, [this](const QByteArray &response) {
+    connectReply(reply, [this, withHidden, page, accumulated](const QByteArray &response) mutable {
         QJsonDocument doc = QJsonDocument::fromJson(response);
         QJsonObject obj = doc.object();
 
         QJsonArray people;
-        if (obj.contains(QStringLiteral("people"))) {
-            people = obj[QStringLiteral("people")].toArray();
-        } else if (doc.isArray()) {
-            people = doc.array();
+        bool hasNextPage = false;
+        people = obj[QStringLiteral("people")].toArray();
+        hasNextPage = obj[QStringLiteral("hasNextPage")].toBool();
+
+        for (const QJsonValue &p : people) {
+            accumulated.append(p);
         }
-        qInfo() << "ImmichApi: People received, count:" << people.size();
-        emit peopleReceived(people);
+
+        bool morePages = !people.isEmpty() && (hasNextPage || (people.size() >= pageSize));
+        if (morePages) {
+            fetchPeoplePage(withHidden, page + 1, accumulated);
+        } else {
+            qInfo() << "ImmichApi: People received, count:" << accumulated.size();
+            emit peopleReceived(accumulated);
+        }
     });
 }
 
@@ -1147,18 +1166,19 @@ void ImmichApi::restoreAllTrash()
     });
 }
 
-void ImmichApi::updatePerson(const QString &personId, const QString &name, const QString &birthDate)
+void ImmichApi::updatePerson(const QString &personId, const QVariantMap &fields)
 {
-    qInfo() << "ImmichApi: Updating person:" << personId << "name:" << name;
+    qInfo() << "ImmichApi: Updating person:" << personId << "fields:" << fields.keys();
     QUrl url(m_authManager->serverUrl() + QStringLiteral("/api/people/") + personId);
     QNetworkRequest request = createAuthenticatedRequest(url);
 
     QJsonObject json;
-    json["name"] = name;
-    if (!birthDate.isEmpty()) {
-        json["birthDate"] = birthDate;
-    } else {
-        json["birthDate"] = QJsonValue::Null;
+    for (auto it = fields.constBegin(); it != fields.constEnd(); ++it) {
+        if (it.key() == QStringLiteral("birthDate") && it.value().toString().isEmpty()) {
+            json[it.key()] = QJsonValue::Null;
+        } else {
+            json[it.key()] = QJsonValue::fromVariant(it.value());
+        }
     }
 
     QJsonDocument doc(json);

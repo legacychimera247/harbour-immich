@@ -26,7 +26,7 @@ public:
     Q_INVOKABLE void fetchAlbumDetails(const QString &albumId);
     Q_INVOKABLE void searchByParameters(const QVariantMap &searchParams);
     Q_INVOKABLE void searchSmartByParameters(const QVariantMap &searchParams);
-    Q_INVOKABLE void fetchPeople();
+    Q_INVOKABLE void fetchPeople(bool withHidden = false);
     Q_INVOKABLE void fetchSearchSuggestions(const QString &type);
     Q_INVOKABLE void toggleFavorite(const QStringList &assetIds, bool isFavorite);
     Q_INVOKABLE void getAssetInfo(const QString &assetId);
@@ -59,7 +59,7 @@ public:
     Q_INVOKABLE void restoreFromTrash(const QStringList &assetIds);
     Q_INVOKABLE void emptyTrash();
     Q_INVOKABLE void restoreAllTrash();
-    Q_INVOKABLE void updatePerson(const QString &personId, const QString &name, const QString &birthDate);
+    Q_INVOKABLE void updatePerson(const QString &personId, const QVariantMap &fields);
     Q_INVOKABLE void fetchAlbumsForAsset(const QString &assetId);
     Q_INVOKABLE void fetchCities();
     Q_INVOKABLE void fetchUniqueFolderPaths();
@@ -133,6 +133,7 @@ private:
 
     QNetworkRequest createAuthenticatedRequest(const QUrl &url) const;
     void handleNetworkError(QNetworkReply *reply);
+    void fetchPeoplePage(bool withHidden, int page, QJsonArray accumulated);
     void populateBaseSearchParams(QJsonObject &json, const QVariantMap &searchParams);
     void uploadNextFile();
     void startAssetDownload(const QString &assetId, const QString &fileName);
